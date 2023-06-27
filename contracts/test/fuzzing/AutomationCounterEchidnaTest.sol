@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.7;
 
-import {AutomationCounter} from "../../AutomationCounter.sol";
+import {AutomationCounter} from "../../chainlink/AutomationCounter.sol";
 
 contract AutomationCounterEchidnaTest is AutomationCounter {
     constructor() AutomationCounter(8 days) {}
