@@ -1,4 +1,4 @@
-const { network } = require('hardhat');
+const { network, ethers } = require('hardhat');
 const { verify } = require('../helper-functions');
 const {
     developmentChains,
@@ -10,13 +10,34 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     const { deploy, log } = deployments;
     const { deployer } = await getNamedAccounts();
     const chainId = network.config.chainId;
+    const waitConfiramtions = developmentChains.includes(network.name)
+        ? 1
+        : VERIFICATION_BLOCK_CONFIRMATIONS;
 
-    let ethUsdPriceFeedAddress;
+    const ethUsdPriceFeedAddress = networkConfig[chainId]['ethUsdPriceFeed'];
+    const btcUsdPriceFeed = networkConfig[chainId]['btcUsdPriceFeed'];
+    const wethAddress = networkConfig[chainId]['wethAddress'];
+    const wbtcAddress = networkConfig[chainId]['wbtcAddress'];
 
-    if (chainId == 31337) {
-        const ethUsdAggregator = await deployments.get('MockV3Aggregator');
-        ethUsdPriceFeedAddress = ethUsdAggregator.address;
-    } else {
-        ethUsdPriceFeedAddress = networkConfig[chainId]['ethUsdPriceFeed'];
+    const dhc = await ethers.getContract('DecentralizedHryvnaCoin');
+
+    const tokenAddresses = [wethAddress, wbtcAddress];
+    const priceFeedAddresses = [ethUsdPriceFeedAddress, btcUsdPriceFeed];
+    const args = [tokenAddresses, priceFeedAddresses, dhc.address];
+
+    const dhcEngine = await deploy('DHCEngine', {
+        from: deployer,
+        log: true,
+        args: args,
+        waitConfirmations: waitConfiramtions,
+    });
+
+    // Verify the contract
+    if (!developmentChains.includes(network.name) && process.env.ETHERSCAN_API_KEY) {
+        log('Verigying contract...');
+        await verify(dhcEngine.address, args);
     }
+    log('----------------------------------------------------------------');
 };
+
+module.exports.tags = ['all', 'dhcengine'];

@@ -11,8 +11,8 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     const { deployer } = await getNamedAccounts();
     const chainId = network.config.chainId;
     // If we are on a local development network, we need to deploy mocks!
-    log(deployer);
     let wethMock, wbtcMock, ethUsdPriceFeed, btcUsdPriceFeed;
+    log(`Deployer: ${deployer}`);
 
     if (developmentChains.includes(network.name)) {
         log('Local network detected! Deploying mocks...');
@@ -51,6 +51,11 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
 
         log('Mocks Deployed!');
         log('------------------------------------------------');
+        // log(wbtcMock.address);
+        // log(wethMock.address);
+        // log(btcUsdPriceFeed.address);
+        // log(ethUsdPriceFeed.address);
     }
 };
+
 module.exports.tags = ['all', 'mocks'];

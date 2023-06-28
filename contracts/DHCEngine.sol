@@ -91,7 +91,7 @@ contract DHCEngine is ReentrancyGuard {
     //////////////////////
     constructor(
         address[] memory tokenAddresses,
-        address[] memory priceFeedAddresses,
+        address[] memory ,,,,,
         address dhcAddress
     ) {
         if (tokenAddresses.length != priceFeedAddresses.length) {
