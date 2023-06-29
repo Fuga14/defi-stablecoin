@@ -73,7 +73,7 @@ contract DHCEngine is ReentrancyGuard {
     // Modifiers
     //////////////////////
     modifier moreThanZero(uint256 amount) {
-        if (amount < 0) {
+        if (amount == 0) {
             revert DHCEngine__NeedsMoreThanZero();
         }
         _;
@@ -91,7 +91,7 @@ contract DHCEngine is ReentrancyGuard {
     //////////////////////
     constructor(
         address[] memory tokenAddresses,
-        address[] memory ,,,,,
+        address[] memory priceFeedAddresses,
         address dhcAddress
     ) {
         if (tokenAddresses.length != priceFeedAddresses.length) {
