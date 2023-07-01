@@ -4,7 +4,7 @@ const { developmentChains, networkConfig } = require('../../helper-hardhat-confi
 
 !developmentChains.includes(network.name)
     ? describe.skip
-    : describe('DHCEngine Unit Test', () => {
+    : describe('Mocks Unit Test', () => {
           let DHC;
           let DHCEngine;
           let weth;
@@ -18,7 +18,6 @@ const { developmentChains, networkConfig } = require('../../helper-hardhat-confi
               DHC = await DHC.connect(deployer);
               DHCEngine = await ethers.getContract('DHCEngine');
               DHCEngine = await DHCEngine.connect(deployer);
-
               DHC.transferOwnership(DHCEngine.address);
           });
 
@@ -33,24 +32,6 @@ const { developmentChains, networkConfig } = require('../../helper-hardhat-confi
                   await weth.mint(user1.address, '100');
                   balanceUser = await weth.balanceOf(user1.address);
                   assert.equal(balanceUser.toNumber(), 100);
-              });
-          });
-
-          describe('DHCEngine Price Tests', function () {
-              it('Should return value in usd of eth amount', async () => {
-                  const ethAmount = ethers.utils.parseEther('10');
-                  const expectedUsd = '20000000000000000000000'; // 10e18 * $ETH 2000 = 20000e18
-                  const usdValue = await DHCEngine.getUsdValue(weth.address, ethAmount);
-                  assert.equal(usdValue.toString(), expectedUsd);
-              });
-          });
-
-          describe('DHCEngine Deposit Collateral Tests', () => {
-              it('Should not allow to deposit collateral with 0 amount of tokens', async () => {
-                  await weth.approve(DHCEngine.address, ethers.utils.parseEther('10'));
-                  await expect(
-                      DHCEngine.depositCollateral(weth.address, ethers.utils.parseEther('0'))
-                  ).to.be.revertedWithCustomError(DHCEngine, 'DHCEngine__NeedsMoreThanZero');
               });
           });
       });

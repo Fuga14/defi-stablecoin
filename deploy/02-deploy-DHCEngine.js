@@ -32,6 +32,8 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
         waitConfirmations: waitConfiramtions,
     });
 
+    dhc.transferOwnership(dhcEngine.address);
+
     // Verify the contract
     if (!developmentChains.includes(network.name) && process.env.ETHERSCAN_API_KEY) {
         log('Verigying contract...');

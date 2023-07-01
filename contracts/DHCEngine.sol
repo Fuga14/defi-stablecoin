@@ -108,7 +108,20 @@ contract DHCEngine is ReentrancyGuard {
     // External functions
     //////////////////////
 
-    function depostitCollateralandMintDHC() external {}
+    /**
+     * @param tokenCollateralAddress The address of the token to deposit as collateral
+     * @param amountCollateral The amount of collateral to deposit
+     * @param amountDhcToMint: The amount of DHC to mint
+     * @notice This function combines depositing collateral and minting DHC in 1 transaction
+     */
+    function depostitCollateralandMintDHC(
+        address tokenCollateralAddress,
+        uint256 amountCollateral,
+        uint256 amountDhcToMint
+    ) external {
+        depositCollateral(tokenCollateralAddress, amountCollateral);
+        mintDhc(amountDhcToMint);
+    }
 
     /**
      * @param tokenCollateralAddress The address of the token to deposit as collateral
@@ -118,7 +131,7 @@ contract DHCEngine is ReentrancyGuard {
         address tokenCollateralAddress,
         uint256 amountCollateral
     )
-        external
+        public
         moreThanZero(amountCollateral)
         isAllowedToken(tokenCollateralAddress)
         nonReentrant
