@@ -160,13 +160,29 @@ contract DHCEngine is ReentrancyGuard {
         }
     }
 
-    function reedemCollateralForDHC() external {}
+    /**
+     *
+     * @param tokenCollateralAddress The address of the collateral token to be redeemed
+     * @param amountCollateral The amount of collateral to be redeemed
+     * @param amountDhcToBurn The amount of Dhc to be burned
+     * @notice The function includes checking health factor after redeeming collaterals
+     *
+     * This function will withdraw your collateral and burn DHC in 1 tx
+     */
+    function reedemCollateralForDHC(
+        address tokenCollateralAddress,
+        uint256 amountCollateral,
+        uint256 amountDhcToBurn
+    ) external {
+        burnDhc(amountDhcToBurn);
+        reedemCollateral(tokenCollateralAddress, amountCollateral);
+    }
 
     // health factor must be more than 1 after collateral pulled
     function reedemCollateral(
         address tokenCollaterAddress,
         uint256 amountCollateral
-    ) external moreThanZero(amountCollateral) nonReentrant {
+    ) public moreThanZero(amountCollateral) nonReentrant {
         s_collateralDeposited[msg.sender][
             tokenCollaterAddress
         ] -= amountCollateral;
@@ -208,7 +224,15 @@ contract DHCEngine is ReentrancyGuard {
         }
     }
 
-    function burnDhc() external {}
+    function burnDhc(uint256 amount) public moreThanZero(amount) nonReentrant {
+        s_DHCMinted[msg.sender] -= amount;
+        bool success = i_dhc.transferFrom(msg.sender, address(this), amount);
+        if (!success) {
+            revert DHCEngine__TransferFailed();
+        }
+        i_dhc.burn(amount);
+        _revertIfHealthFactorIsBroken(msg.sender); // ❓❓❓❓
+    }
 
     function liquidate() external {}
 
