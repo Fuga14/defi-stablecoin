@@ -69,6 +69,12 @@ contract DHCEngine is ReentrancyGuard {
         uint256 indexed amount
     );
 
+    event CollateralRedeemed(
+        address indexed user,
+        address indexed token,
+        uint256 indexed amount
+    );
+
     //////////////////////
     // Modifiers
     //////////////////////
@@ -156,7 +162,31 @@ contract DHCEngine is ReentrancyGuard {
 
     function reedemCollateralForDHC() external {}
 
-    function reedemCollateral() external {}
+    // health factor must be more than 1 after collateral pulled
+    function reedemCollateral(
+        address tokenCollaterAddress,
+        uint256 amountCollateral
+    ) external moreThanZero(amountCollateral) nonReentrant {
+        s_collateralDeposited[msg.sender][
+            tokenCollaterAddress
+        ] -= amountCollateral;
+        emit CollateralRedeemed(
+            msg.sender,
+            tokenCollaterAddress,
+            amountCollateral
+        );
+
+        // check health factor for being more than 1
+        bool success = IERC20(tokenCollaterAddress).transfer(
+            msg.sender,
+            amountCollateral
+        );
+        if (!success) {
+            revert DHCEngine__TransferFailed();
+        }
+
+        _revertIfHealthFactorIsBroken(msg.sender);
+    }
 
     /**
      *
