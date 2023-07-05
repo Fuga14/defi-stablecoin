@@ -5,6 +5,7 @@ import "./DecentralizedHryvnaCoin.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
+import "./libs/OracleLib.sol";
 
 /**
  * @title DHCEngine
@@ -37,10 +38,11 @@ contract DHCEngine is ReentrancyGuard {
     error DHCEngine__HealthFactorisOK();
     error DHCEngine__HealthFactorIsNotImporved();
 
+    using OracleLib for AggregatorV3Interface;
+
     //////////////////////
     // State variables
     //////////////////////
-    DecentralizedHryvnaCoin private immutable i_dhc;
 
     uint256 private constant ADDITIONAL_FEED_PRECISION = 1e10;
     uint256 private constant FEED_PRECISION = 1e8;
@@ -60,6 +62,7 @@ contract DHCEngine is ReentrancyGuard {
     /// @dev Address of user to amount of minted tokens
     mapping(address => uint256) private s_DHCMinted;
 
+    DecentralizedHryvnaCoin private immutable i_dhc;
     address[] private s_collaterTokens;
 
     //////////////////////
@@ -134,37 +137,6 @@ contract DHCEngine is ReentrancyGuard {
     }
 
     /**
-     * @param tokenCollateralAddress The address of the token to deposit as collateral
-     * @param amountCollateral The amount of collateral to deposit
-     */
-    function depositCollateral(
-        address tokenCollateralAddress,
-        uint256 amountCollateral
-    )
-        public
-        moreThanZero(amountCollateral)
-        isAllowedToken(tokenCollateralAddress)
-        nonReentrant
-    {
-        s_collateralDeposited[msg.sender][
-            tokenCollateralAddress
-        ] += amountCollateral;
-        emit CollateralDeposited(
-            msg.sender,
-            tokenCollateralAddress,
-            amountCollateral
-        );
-        bool success = IERC20(tokenCollateralAddress).transferFrom(
-            msg.sender,
-            address(this),
-            amountCollateral
-        );
-        if (!success) {
-            revert DHCEngine__TransferFailed();
-        }
-    }
-
-    /**
      *
      * @param tokenCollateralAddress The address of the collateral token to be redeemed
      * @param amountCollateral The amount of collateral to be redeemed
@@ -180,45 +152,6 @@ contract DHCEngine is ReentrancyGuard {
     ) external {
         burnDhc(amountDhcToBurn);
         reedemCollateral(tokenCollateralAddress, amountCollateral);
-    }
-
-    // health factor must be more than 1 after collateral pulled
-    function reedemCollateral(
-        address tokenCollateralAddress,
-        uint256 amountCollateral
-    ) public moreThanZero(amountCollateral) nonReentrant {
-        _redeemCollateral(
-            msg.sender,
-            msg.sender,
-            tokenCollateralAddress,
-            amountCollateral
-        );
-        _revertIfHealthFactorIsBroken(msg.sender);
-    }
-
-    /**
-     *
-     * @param amountDhcToMint: The amount of DHC to mint
-     * @notice You can only mint if you have enough collateral
-     * @notice They must have more collateral then the minimum treshold
-     */
-    function mintDhc(uint256 amountDhcToMint)
-        public
-        moreThanZero(amountDhcToMint)
-        nonReentrant
-    {
-        s_DHCMinted[msg.sender] += amountDhcToMint;
-        // if they minted too much ($150 DHC, $100 ETH)
-        _revertIfHealthFactorIsBroken(msg.sender);
-        bool minted = i_dhc.mint(msg.sender, amountDhcToMint);
-        if (!minted) {
-            revert DHCEngine__MintFailed();
-        }
-    }
-
-    function burnDhc(uint256 amount) public moreThanZero(amount) nonReentrant {
-        _burnDhc(amount, msg.sender, msg.sender);
-        _revertIfHealthFactorIsBroken(msg.sender); // ❓❓❓❓
     }
 
     /**
@@ -276,8 +209,82 @@ contract DHCEngine is ReentrancyGuard {
     }
 
     //////////////////////
-    // Private and internal functions
+    // Public functions
     //////////////////////
+
+    /**
+     * @param tokenCollateralAddress The address of the token to deposit as collateral
+     * @param amountCollateral The amount of collateral to deposit
+     */
+    function depositCollateral(
+        address tokenCollateralAddress,
+        uint256 amountCollateral
+    )
+        public
+        moreThanZero(amountCollateral)
+        isAllowedToken(tokenCollateralAddress)
+        nonReentrant
+    {
+        s_collateralDeposited[msg.sender][
+            tokenCollateralAddress
+        ] += amountCollateral;
+        emit CollateralDeposited(
+            msg.sender,
+            tokenCollateralAddress,
+            amountCollateral
+        );
+        bool success = IERC20(tokenCollateralAddress).transferFrom(
+            msg.sender,
+            address(this),
+            amountCollateral
+        );
+        if (!success) {
+            revert DHCEngine__TransferFailed();
+        }
+    }
+
+    // health factor must be more than 1 after collateral pulled
+    function reedemCollateral(
+        address tokenCollateralAddress,
+        uint256 amountCollateral
+    ) public moreThanZero(amountCollateral) nonReentrant {
+        _redeemCollateral(
+            msg.sender,
+            msg.sender,
+            tokenCollateralAddress,
+            amountCollateral
+        );
+        _revertIfHealthFactorIsBroken(msg.sender);
+    }
+
+    /**
+     *
+     * @param amountDhcToMint: The amount of DHC to mint
+     * @notice You can only mint if you have enough collateral
+     * @notice They must have more collateral then the minimum treshold
+     */
+    function mintDhc(uint256 amountDhcToMint)
+        public
+        moreThanZero(amountDhcToMint)
+        nonReentrant
+    {
+        s_DHCMinted[msg.sender] += amountDhcToMint;
+        // if they minted too much ($150 DHC, $100 ETH)
+        _revertIfHealthFactorIsBroken(msg.sender);
+        bool minted = i_dhc.mint(msg.sender, amountDhcToMint);
+        if (!minted) {
+            revert DHCEngine__MintFailed();
+        }
+    }
+
+    function burnDhc(uint256 amount) public moreThanZero(amount) nonReentrant {
+        _burnDhc(amount, msg.sender, msg.sender);
+        _revertIfHealthFactorIsBroken(msg.sender); // ❓❓❓❓
+    }
+
+    /////////////////////////////////
+    // Private and internal functions
+    /////////////////////////////////
 
     /**
      *
@@ -325,6 +332,10 @@ contract DHCEngine is ReentrancyGuard {
         }
     }
 
+    ///////////////////////////////////////
+    // Public and exteranal view functions
+    ///////////////////////////////////////
+
     function _getAccountInformation(address user)
         internal
         view
@@ -360,10 +371,6 @@ contract DHCEngine is ReentrancyGuard {
             revert DHCEngine__BreaksHealthFactor(userHealthFactor);
         }
     }
-
-    //////////////////////
-    // Public and exteranal view functions
-    //////////////////////
 
     function getTokenAmountFromUsd(address token, uint256 usdAmountInWei)
         public
@@ -412,5 +419,13 @@ contract DHCEngine is ReentrancyGuard {
     function getHealthFactor(address user) public view returns (uint256) {
         uint256 userHealthFactor = _healthFactor(user);
         return userHealthFactor;
+    }
+
+    function getAccountInformation(address user)
+        public
+        view
+        returns (uint256 totalDhcMinted, uint256 collateralValueInUsd)
+    {
+        (totalDhcMinted, collateralValueInUsd) = _getAccountInformation(user);
     }
 }

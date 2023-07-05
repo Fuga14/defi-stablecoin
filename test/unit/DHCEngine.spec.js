@@ -7,18 +7,20 @@ const { developmentChains, networkConfig } = require('../../helper-hardhat-confi
     : describe('DHCEngine Unit Test', () => {
           let DHC;
           let DHCEngine;
-          let weth;
+          let weth, wbtc;
           let deployer, user1, user2;
 
           beforeEach(async () => {
               [deployer, user1, user2] = await ethers.getSigners();
               await deployments.fixture(['all']);
               weth = await ethers.getContractAt('ERC20Mock', networkConfig[31337].wethAddress);
+              wbtc = await ethers.getContractAt('ERC20Mock', networkConfig[31337].wbtcAddress);
               DHC = await ethers.getContract('DecentralizedHryvnaCoin');
               DHC = await DHC.connect(deployer);
               DHCEngine = await ethers.getContract('DHCEngine');
               DHCEngine = await DHCEngine.connect(deployer);
-              //   DHC.transferOwnership(DHCEngine.address);
+
+              // DHC.transferOwnership(DHCEngine.address);
           });
 
           describe('DHCEngine Price Tests', function () {

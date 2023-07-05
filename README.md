@@ -36,3 +36,23 @@ external & public view & pure functions
 -Make transferOwnership to Engine❗❗❗
 
 CEI: CHECK -> EFFECTS -> INTERACTIONS
+
+✅❌
+
+### TESTING
+❌Constructor test (need to deploy again)
+❌getTokenAmountFromUsd
+❌depositCollateral
+❌getAccountInformation (can deposit collateral and get information from account)
+
+
+⚠️calculate health factor function
+⚠️set health factor if debt is 0 (3:15:00)
+⚠️added a bunch of view functions
+⚠️change latestRoundData to staleCheckLatestRoundData
+
+Last steps:
+1. Some proper oracle use
+2. Write more tests
+3. Smart Contract Audit Preparation
+
