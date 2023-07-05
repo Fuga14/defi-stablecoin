@@ -34,6 +34,8 @@ contract DHCEngine is ReentrancyGuard {
     error DHCEngine__TransferFailed();
     error DHCEngine__MintFailed();
     error DHCEngine__BreaksHealthFactor(uint256 healthFactor);
+    error DHCEngine__HealthFactorisOK();
+    error DHCEngine__HealthFactorIsNotImporved();
 
     //////////////////////
     // State variables
@@ -45,7 +47,8 @@ contract DHCEngine is ReentrancyGuard {
     uint256 private constant PRECISION = 1e18;
     uint256 private constant LIQUIDATION_THRESHOLD = 50; // This means you need to be 200% over-collateralized
     uint256 private constant LIQUIDATION_PRECISION = 100;
-    uint256 private constant MIN_HEALTH_FACTOR = 1;
+    uint256 private constant MIN_HEALTH_FACTOR = 1e18;
+    uint256 private constant LIQUIDATION_BONUS = 10;
 
     /// @dev Mapping of token address to price feed address
     mapping(address => address) private s_priceFeeds;
@@ -70,9 +73,10 @@ contract DHCEngine is ReentrancyGuard {
     );
 
     event CollateralRedeemed(
-        address indexed user,
+        address indexed redeemedFrom,
+        address indexed redeemedTo,
         address indexed token,
-        uint256 indexed amount
+        uint256 amount
     );
 
     //////////////////////
@@ -180,27 +184,15 @@ contract DHCEngine is ReentrancyGuard {
 
     // health factor must be more than 1 after collateral pulled
     function reedemCollateral(
-        address tokenCollaterAddress,
+        address tokenCollateralAddress,
         uint256 amountCollateral
     ) public moreThanZero(amountCollateral) nonReentrant {
-        s_collateralDeposited[msg.sender][
-            tokenCollaterAddress
-        ] -= amountCollateral;
-        emit CollateralRedeemed(
+        _redeemCollateral(
             msg.sender,
-            tokenCollaterAddress,
+            msg.sender,
+            tokenCollateralAddress,
             amountCollateral
         );
-
-        // check health factor for being more than 1
-        bool success = IERC20(tokenCollaterAddress).transfer(
-            msg.sender,
-            amountCollateral
-        );
-        if (!success) {
-            revert DHCEngine__TransferFailed();
-        }
-
         _revertIfHealthFactorIsBroken(msg.sender);
     }
 
@@ -225,22 +217,113 @@ contract DHCEngine is ReentrancyGuard {
     }
 
     function burnDhc(uint256 amount) public moreThanZero(amount) nonReentrant {
-        s_DHCMinted[msg.sender] -= amount;
-        bool success = i_dhc.transferFrom(msg.sender, address(this), amount);
-        if (!success) {
-            revert DHCEngine__TransferFailed();
-        }
-        i_dhc.burn(amount);
+        _burnDhc(amount, msg.sender, msg.sender);
         _revertIfHealthFactorIsBroken(msg.sender); // ❓❓❓❓
     }
 
-    function liquidate() external {}
+    /**
+     *
+     * @param collateralToken The ERC20 token address to liquidate from the user
+     * @param user The user who has broken health factor. Health factor should be below MIN_HEALTH_FACTOR
+     * @param debtToCover The amount of DHC you want to burn to improve the users health factor
+     * @notice You can partially liquidate a user
+     * @notice You will get a liquidation bonus for taking the users funds
+     */
+    function liquidate(
+        address collateralToken,
+        address user,
+        uint256 debtToCover
+    ) external moreThanZero(debtToCover) nonReentrant {
+        uint256 startingUserHealthFactor = _healthFactor(user);
+        if (startingUserHealthFactor >= MIN_HEALTH_FACTOR) {
+            revert DHCEngine__HealthFactorisOK();
+        }
+        /*
+        We want to burn their DHC "debt"
+        And take their collateral
+        Bad user: $140 ETH, $100 DHC
+        debtToCover = $100
+        $100 DHC = ??? ETH
+        */
+        uint256 tokenAmountFromDebtCovered = getTokenAmountFromUsd(
+            collateralToken,
+            debtToCover
+        );
 
-    function getHealthFactor() external view {}
+        // In order to make interest of liquidation we want to make 10% bonus
+        // So if liquidation is $100 of WETH we'll give $110
+        // We should implement a feature to liquidate in event the protocol is insolvent
+        // And sweep extra amounts into a treasury
+
+        uint256 bonusCollateral = (tokenAmountFromDebtCovered *
+            LIQUIDATION_BONUS) / LIQUIDATION_PRECISION;
+        uint256 totalCollateralToReedem = tokenAmountFromDebtCovered +
+            bonusCollateral;
+        _redeemCollateral(
+            user,
+            msg.sender,
+            collateralToken,
+            totalCollateralToReedem
+        );
+
+        //Then we burning DHC
+        _burnDhc(debtToCover, user, msg.sender);
+        uint256 endingUserHealthFactor = _healthFactor(user);
+        if (endingUserHealthFactor <= startingUserHealthFactor) {
+            revert DHCEngine__HealthFactorIsNotImporved();
+        }
+        _revertIfHealthFactorIsBroken(msg.sender);
+    }
 
     //////////////////////
     // Private and internal functions
     //////////////////////
+
+    /**
+     *
+     * @dev Low-level internal function, do not call unless the function calling
+     * it is checking for health factors being broken
+     */
+    function _burnDhc(
+        uint256 amountToBurnDhc,
+        address onBehalfOf,
+        address dhcFrom
+    ) private {
+        s_DHCMinted[onBehalfOf] -= amountToBurnDhc;
+        bool success = i_dhc.transferFrom(
+            dhcFrom,
+            address(this),
+            amountToBurnDhc
+        );
+        if (!success) {
+            revert DHCEngine__TransferFailed();
+        }
+        i_dhc.burn(amountToBurnDhc);
+    }
+
+    function _redeemCollateral(
+        address from,
+        address to,
+        address tokenCollateralAddress,
+        uint256 amountCollateral
+    ) private {
+        s_collateralDeposited[from][tokenCollateralAddress] -= amountCollateral;
+        emit CollateralRedeemed(
+            from,
+            to,
+            tokenCollateralAddress,
+            amountCollateral
+        );
+
+        // check health factor for being more than 1
+        bool success = IERC20(tokenCollateralAddress).transfer(
+            to,
+            amountCollateral
+        );
+        if (!success) {
+            revert DHCEngine__TransferFailed();
+        }
+    }
 
     function _getAccountInformation(address user)
         internal
@@ -282,6 +365,21 @@ contract DHCEngine is ReentrancyGuard {
     // Public and exteranal view functions
     //////////////////////
 
+    function getTokenAmountFromUsd(address token, uint256 usdAmountInWei)
+        public
+        view
+        returns (uint256)
+    {
+        // usdAmountInWei / priceOfToken
+        AggregatorV3Interface priceFeed = AggregatorV3Interface(
+            s_priceFeeds[token]
+        );
+        (, int256 price, , , ) = priceFeed.latestRoundData();
+        return
+            (usdAmountInWei * PRECISION) /
+            (uint256(price) * ADDITIONAL_FEED_PRECISION);
+    }
+
     function getAccountCollateralValue(address user)
         public
         view
@@ -309,5 +407,10 @@ contract DHCEngine is ReentrancyGuard {
         // price of 1 ETH * amount of collaterals in ETH / 1e18
         return
             ((uint256(price) * ADDITIONAL_FEED_PRECISION) * amount) / PRECISION;
+    }
+
+    function getHealthFactor(address user) public view returns (uint256) {
+        uint256 userHealthFactor = _healthFactor(user);
+        return userHealthFactor;
     }
 }
