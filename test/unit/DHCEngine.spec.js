@@ -33,7 +33,7 @@ const { developmentChains, networkConfig } = require('../../helper-hardhat-confi
               // DHC.transferOwnership(DHCEngine.address);
           });
 
-          describe('DHCEngine Constructor Test', async () => {
+          describe('DHCEngine Constructor Tests', async () => {
               it('Should revert error if length of token addresses is not equal to length of price feed addresses', async () => {
                   const dhcEngineContractFactory = await ethers.getContractFactory('DHCEngine');
 
@@ -68,7 +68,6 @@ const { developmentChains, networkConfig } = require('../../helper-hardhat-confi
               it('Should add all token collateral addresses into 1 single array', async () => {
                   const expectedArrayOfTokens = [weth.address, wbtc.address];
                   const tokenCollateralAddress = await DHCEngine.getCollateralTokens();
-                  //   assert.equal(tokenCollateralAddress, expectedArrayOfTokens);
                   assert.deepEqual(tokenCollateralAddress, expectedArrayOfTokens);
               });
           });
@@ -79,6 +78,15 @@ const { developmentChains, networkConfig } = require('../../helper-hardhat-confi
                   const expectedUsd = '20000000000000000000000'; // 10e18 * $ETH 2000 = 20000e18
                   const usdValue = await DHCEngine.getUsdValue(weth.address, ethAmount);
                   assert.equal(usdValue.toString(), expectedUsd);
+              });
+
+              it('Should return eth amount converted from usd amount', async () => {
+                  const expectedEthAmount = '1';
+                  const usdAmount = '2000';
+                  const token = weth.address;
+
+                  const ethAmountFromUsd = await DHCEngine.getTokenAmountFromUsd(token, usdAmount);
+                  assert.equal(ethAmountFromUsd.toString(), expectedEthAmount);
               });
           });
 

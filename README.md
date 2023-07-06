@@ -40,7 +40,7 @@ CEI: CHECK -> EFFECTS -> INTERACTIONS
 
 ### TESTING
 ✅Constructor test (need to deploy again)
-❌getTokenAmountFromUsd
+✅getTokenAmountFromUsd
 ❌depositCollateral
 ❌getAccountInformation (can deposit collateral and get information from account)
 
