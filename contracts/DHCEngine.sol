@@ -63,7 +63,7 @@ contract DHCEngine is ReentrancyGuard {
     mapping(address => uint256) private s_DHCMinted;
 
     DecentralizedHryvnaCoin private immutable i_dhc;
-    address[] private s_collaterTokens;
+    address[] private s_collateralTokens;
 
     //////////////////////
     // Events
@@ -114,7 +114,7 @@ contract DHCEngine is ReentrancyGuard {
         }
         for (uint256 i = 0; i < tokenAddresses.length; i++) {
             s_priceFeeds[tokenAddresses[i]] = priceFeedAddresses[i];
-            s_collaterTokens.push(tokenAddresses[i]);
+            s_collateralTokens.push(tokenAddresses[i]);
         }
         i_dhc = DecentralizedHryvnaCoin(dhcAddress);
     }
@@ -395,8 +395,8 @@ contract DHCEngine is ReentrancyGuard {
         returns (uint256 totalCollateralValueInUsd)
     {
         // loop through each collateral token, get the amount they have deposited, and map it to the price, to get the USD value
-        for (uint256 i = 0; i < s_collaterTokens.length; i++) {
-            address token = s_collaterTokens[i];
+        for (uint256 i = 0; i < s_collateralTokens.length; i++) {
+            address token = s_collateralTokens[i];
             uint256 amount = s_collateralDeposited[user][token];
             totalCollateralValueInUsd += getUsdValue(token, amount);
         }
@@ -429,5 +429,25 @@ contract DHCEngine is ReentrancyGuard {
         returns (uint256 totalDhcMinted, uint256 collateralValueInUsd)
     {
         (totalDhcMinted, collateralValueInUsd) = _getAccountInformation(user);
+    }
+
+    function getTokenPriceFeedAddress(address token)
+        public
+        view
+        returns (address)
+    {
+        return s_priceFeeds[token];
+    }
+
+    function getCollateralDepositedAmountOfUser(address user, address token)
+        public
+        view
+        returns (uint256)
+    {
+        return s_collateralDeposited[user][token];
+    }
+
+    function getCollateralTokens() public view returns (address[] memory) {
+        return s_collateralTokens;
     }
 }

@@ -5,22 +5,72 @@ const { developmentChains, networkConfig } = require('../../helper-hardhat-confi
 !developmentChains.includes(network.name)
     ? describe.skip
     : describe('DHCEngine Unit Test', () => {
+          // contracts variables
           let DHC;
           let DHCEngine;
           let weth, wbtc;
           let deployer, user1, user2;
+          let ethUsdPriceFeed, btcUsdPriceFeed;
 
           beforeEach(async () => {
               [deployer, user1, user2] = await ethers.getSigners();
               await deployments.fixture(['all']);
               weth = await ethers.getContractAt('ERC20Mock', networkConfig[31337].wethAddress);
               wbtc = await ethers.getContractAt('ERC20Mock', networkConfig[31337].wbtcAddress);
+              ethUsdPriceFeed = await ethers.getContractAt(
+                  'MockV3Aggregator',
+                  networkConfig[31337].ethUsdPriceFeed
+              );
+              btcUsdPriceFeed = await ethers.getContractAt(
+                  'MockV3Aggregator',
+                  networkConfig[31337].btcUsdPriceFeed
+              );
               DHC = await ethers.getContract('DecentralizedHryvnaCoin');
               DHC = await DHC.connect(deployer);
               DHCEngine = await ethers.getContract('DHCEngine');
               DHCEngine = await DHCEngine.connect(deployer);
 
               // DHC.transferOwnership(DHCEngine.address);
+          });
+
+          describe('DHCEngine Constructor Test', async () => {
+              it('Should revert error if length of token addresses is not equal to length of price feed addresses', async () => {
+                  const dhcEngineContractFactory = await ethers.getContractFactory('DHCEngine');
+
+                  await expect(
+                      dhcEngineContractFactory.deploy(
+                          [weth.address, wbtc.address],
+                          [ethUsdPriceFeed.address],
+                          DHC.address
+                      )
+                  ).to.be.revertedWithCustomError(
+                      DHCEngine,
+                      'DHCEngine__TokenAddressesAndPriceFeedAddressesMustBeSameLength'
+                  );
+              });
+
+              it('Should return correct price feed address of token', async () => {
+                  const wethTokenAddress = weth.address;
+                  const expectedWethPriceFeedAddress = ethUsdPriceFeed.address;
+                  const wethTokenPriceFeedAddress = await DHCEngine.getTokenPriceFeedAddress(
+                      wethTokenAddress
+                  );
+                  assert.equal(wethTokenPriceFeedAddress, expectedWethPriceFeedAddress);
+
+                  const wbtcTokenAddress = wbtc.address;
+                  const expectedWbtcPriceFeedAddress = btcUsdPriceFeed.address;
+                  const wbtcTokenPriceFeedAddress = await DHCEngine.getTokenPriceFeedAddress(
+                      wbtcTokenAddress
+                  );
+                  assert.equal(wbtcTokenPriceFeedAddress, expectedWbtcPriceFeedAddress);
+              });
+
+              it('Should add all token collateral addresses into 1 single array', async () => {
+                  const expectedArrayOfTokens = [weth.address, wbtc.address];
+                  const tokenCollateralAddress = await DHCEngine.getCollateralTokens();
+                  //   assert.equal(tokenCollateralAddress, expectedArrayOfTokens);
+                  assert.deepEqual(tokenCollateralAddress, expectedArrayOfTokens);
+              });
           });
 
           describe('DHCEngine Price Tests', function () {

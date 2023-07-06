@@ -37,10 +37,9 @@ external & public view & pure functions
 
 CEI: CHECK -> EFFECTS -> INTERACTIONS
 
-✅❌
 
 ### TESTING
-❌Constructor test (need to deploy again)
+✅Constructor test (need to deploy again)
 ❌getTokenAmountFromUsd
 ❌depositCollateral
 ❌getAccountInformation (can deposit collateral and get information from account)
