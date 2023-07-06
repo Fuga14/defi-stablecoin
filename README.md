@@ -51,8 +51,4 @@ CEI: CHECK -> EFFECTS -> INTERACTIONS
 ⚠️added a bunch of view functions
 ⚠️change latestRoundData to staleCheckLatestRoundData
 
-Last steps:
-1. Some proper oracle use
-2. Write more tests
-3. Smart Contract Audit Preparation
 
