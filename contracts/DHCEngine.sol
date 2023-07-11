@@ -56,8 +56,7 @@ contract DHCEngine is ReentrancyGuard {
     mapping(address => address) private s_priceFeeds;
 
     /// @dev Amount of collateral deposited by user
-    mapping(address => mapping(address => uint256))
-        private s_collateralDeposited;
+    mapping(address => mapping(address => uint256)) private s_collateralDeposited;
 
     /// @dev Address of user to amount of minted tokens
     mapping(address => uint256) private s_DHCMinted;
@@ -69,11 +68,7 @@ contract DHCEngine is ReentrancyGuard {
     // Events
     //////////////////////
 
-    event CollateralDeposited(
-        address indexed user,
-        address indexed token,
-        uint256 indexed amount
-    );
+    event CollateralDeposited(address indexed user, address indexed token, uint256 indexed amount);
 
     event CollateralRedeemed(
         address indexed redeemedFrom,
@@ -127,7 +122,8 @@ contract DHCEngine is ReentrancyGuard {
      * @param tokenCollateralAddress The address of the token to deposit as collateral
      * @param amountCollateral The amount of collateral to deposit
      * @param amountDhcToMint: The amount of DHC to mint
-     * @notice This function combines depositing collateral and minting DHC in 1 transaction
+     * @notice This function combines depositing collateral and
+     *         minting DHC in 1 transaction
      */
     function depostitCollateralandMintDHC(
         address tokenCollateralAddress,
@@ -144,8 +140,7 @@ contract DHCEngine is ReentrancyGuard {
      * @param amountCollateral The amount of collateral to be redeemed
      * @param amountDhcToBurn The amount of Dhc to be burned
      * @notice The function includes checking health factor after redeeming collaterals
-     *
-     * This function will withdraw your collateral and burn DHC in 1 tx
+     *         This function will withdraw your collateral and burn DHC in 1 tx
      */
     function reedemCollateralForDHC(
         address tokenCollateralAddress,
@@ -180,26 +175,17 @@ contract DHCEngine is ReentrancyGuard {
         debtToCover = $100
         $100 DHC = ??? ETH
         */
-        uint256 tokenAmountFromDebtCovered = getTokenAmountFromUsd(
-            collateralToken,
-            debtToCover
-        );
+        uint256 tokenAmountFromDebtCovered = getTokenAmountFromUsd(collateralToken, debtToCover);
 
         // In order to make interest of liquidation we want to make 10% bonus
         // So if liquidation is $100 of WETH we'll give $110
         // We should implement a feature to liquidate in event the protocol is insolvent
         // And sweep extra amounts into a treasury
 
-        uint256 bonusCollateral = (tokenAmountFromDebtCovered *
-            LIQUIDATION_BONUS) / LIQUIDATION_PRECISION;
-        uint256 totalCollateralToReedem = tokenAmountFromDebtCovered +
-            bonusCollateral;
-        _redeemCollateral(
-            user,
-            msg.sender,
-            collateralToken,
-            totalCollateralToReedem
-        );
+        uint256 bonusCollateral = (tokenAmountFromDebtCovered * LIQUIDATION_BONUS) /
+            LIQUIDATION_PRECISION;
+        uint256 totalCollateralToReedem = tokenAmountFromDebtCovered + bonusCollateral;
+        _redeemCollateral(user, msg.sender, collateralToken, totalCollateralToReedem);
 
         //Then we burning DHC
         _burnDhc(debtToCover, user, msg.sender);
@@ -218,23 +204,14 @@ contract DHCEngine is ReentrancyGuard {
      * @param tokenCollateralAddress The address of the token to deposit as collateral
      * @param amountCollateral The amount of collateral to deposit
      */
-    function depositCollateral(
-        address tokenCollateralAddress,
-        uint256 amountCollateral
-    )
+    function depositCollateral(address tokenCollateralAddress, uint256 amountCollateral)
         public
         moreThanZero(amountCollateral)
         isAllowedToken(tokenCollateralAddress)
         nonReentrant
     {
-        s_collateralDeposited[msg.sender][
-            tokenCollateralAddress
-        ] += amountCollateral;
-        emit CollateralDeposited(
-            msg.sender,
-            tokenCollateralAddress,
-            amountCollateral
-        );
+        s_collateralDeposited[msg.sender][tokenCollateralAddress] += amountCollateral;
+
         bool success = IERC20(tokenCollateralAddress).transferFrom(
             msg.sender,
             address(this),
@@ -243,19 +220,17 @@ contract DHCEngine is ReentrancyGuard {
         if (!success) {
             revert DHCEngine__TransferFailed();
         }
+
+        emit CollateralDeposited(msg.sender, tokenCollateralAddress, amountCollateral);
     }
 
     // health factor must be more than 1 after collateral pulled
-    function reedemCollateral(
-        address tokenCollateralAddress,
-        uint256 amountCollateral
-    ) public moreThanZero(amountCollateral) nonReentrant {
-        _redeemCollateral(
-            msg.sender,
-            msg.sender,
-            tokenCollateralAddress,
-            amountCollateral
-        );
+    function reedemCollateral(address tokenCollateralAddress, uint256 amountCollateral)
+        public
+        moreThanZero(amountCollateral)
+        nonReentrant
+    {
+        _redeemCollateral(msg.sender, msg.sender, tokenCollateralAddress, amountCollateral);
         _revertIfHealthFactorIsBroken(msg.sender);
     }
 
@@ -265,11 +240,7 @@ contract DHCEngine is ReentrancyGuard {
      * @notice You can only mint if you have enough collateral
      * @notice They must have more collateral then the minimum treshold
      */
-    function mintDhc(uint256 amountDhcToMint)
-        public
-        moreThanZero(amountDhcToMint)
-        nonReentrant
-    {
+    function mintDhc(uint256 amountDhcToMint) public moreThanZero(amountDhcToMint) nonReentrant {
         s_DHCMinted[msg.sender] += amountDhcToMint;
         // if they minted too much ($150 DHC, $100 ETH)
         _revertIfHealthFactorIsBroken(msg.sender);
@@ -291,7 +262,7 @@ contract DHCEngine is ReentrancyGuard {
     /**
      *
      * @dev Low-level internal function, do not call unless the function calling
-     * it is checking for health factors being broken
+     *      it is checking for health factors being broken
      */
     function _burnDhc(
         uint256 amountToBurnDhc,
@@ -299,11 +270,7 @@ contract DHCEngine is ReentrancyGuard {
         address dhcFrom
     ) private {
         s_DHCMinted[onBehalfOf] -= amountToBurnDhc;
-        bool success = i_dhc.transferFrom(
-            dhcFrom,
-            address(this),
-            amountToBurnDhc
-        );
+        bool success = i_dhc.transferFrom(dhcFrom, address(this), amountToBurnDhc);
         if (!success) {
             revert DHCEngine__TransferFailed();
         }
@@ -317,18 +284,10 @@ contract DHCEngine is ReentrancyGuard {
         uint256 amountCollateral
     ) private {
         s_collateralDeposited[from][tokenCollateralAddress] -= amountCollateral;
-        emit CollateralRedeemed(
-            from,
-            to,
-            tokenCollateralAddress,
-            amountCollateral
-        );
+        emit CollateralRedeemed(from, to, tokenCollateralAddress, amountCollateral);
 
         // check health factor for being more than 1
-        bool success = IERC20(tokenCollateralAddress).transfer(
-            to,
-            amountCollateral
-        );
+        bool success = IERC20(tokenCollateralAddress).transfer(to, amountCollateral);
         if (!success) {
             revert DHCEngine__TransferFailed();
         }
@@ -350,19 +309,31 @@ contract DHCEngine is ReentrancyGuard {
     function _healthFactor(address user) internal view returns (uint256) {
         // total DHC minted
         // total collateral VALUE
-        (
-            uint256 totalDhcMinted,
-            uint256 collateralValueInUsd
-        ) = _getAccountInformation(user);
-        uint256 collateralAdjustedForThreshold = (collateralValueInUsd *
-            LIQUIDATION_THRESHOLD) / LIQUIDATION_PRECISION;
+        (uint256 totalDhcMinted, uint256 collateralValueInUsd) = _getAccountInformation(user);
+        return _calculateHealthFactor(totalDhcMinted, collateralValueInUsd);
+    }
 
-        /*
+    /*
         $1000 ETH - 100 DHC
         1000 * 50 = 50000 / 100 = (500 / 100) > 1 = not liquidated
-        */
+    */
+    function _calculateHealthFactor(uint256 totalDscMinted, uint256 collateralValueInUsd)
+        internal
+        pure
+        returns (uint256)
+    {
+        if (totalDscMinted == 0) return type(uint256).max;
+        uint256 collateralAdjustedForThreshold = (collateralValueInUsd * LIQUIDATION_THRESHOLD) /
+            100;
+        return (collateralAdjustedForThreshold * 1e18) / totalDscMinted;
+    }
 
-        return (collateralAdjustedForThreshold * PRECISION) / totalDhcMinted;
+    function calculateHealthFactor(uint256 totalDhcMinted, uint256 collateralValueInUSd)
+        external
+        pure
+        returns (uint256)
+    {
+        return _calculateHealthFactor(totalDhcMinted, collateralValueInUSd);
     }
 
     // 1. Check if the health factor have enough collateral
@@ -380,13 +351,9 @@ contract DHCEngine is ReentrancyGuard {
         returns (uint256)
     {
         // usdAmountInWei / priceOfToken
-        AggregatorV3Interface priceFeed = AggregatorV3Interface(
-            s_priceFeeds[token]
-        );
+        AggregatorV3Interface priceFeed = AggregatorV3Interface(s_priceFeeds[token]);
         (, int256 price, , , ) = priceFeed.latestRoundData();
-        return
-            (usdAmountInWei * PRECISION) /
-            (uint256(price) * ADDITIONAL_FEED_PRECISION);
+        return (usdAmountInWei * PRECISION) / (uint256(price) * ADDITIONAL_FEED_PRECISION);
     }
 
     function getAccountCollateralValue(address user)
@@ -403,19 +370,12 @@ contract DHCEngine is ReentrancyGuard {
         return totalCollateralValueInUsd;
     }
 
-    function getUsdValue(address token, uint256 amount)
-        public
-        view
-        returns (uint256)
-    {
-        AggregatorV3Interface priceFeed = AggregatorV3Interface(
-            s_priceFeeds[token]
-        );
+    function getUsdValue(address token, uint256 amount) public view returns (uint256) {
+        AggregatorV3Interface priceFeed = AggregatorV3Interface(s_priceFeeds[token]);
         (, int256 price, , , ) = priceFeed.latestRoundData();
         // 1 ETH - 1000$
         // price of 1 ETH * amount of collaterals in ETH / 1e18
-        return
-            ((uint256(price) * ADDITIONAL_FEED_PRECISION) * amount) / PRECISION;
+        return ((uint256(price) * ADDITIONAL_FEED_PRECISION) * amount) / PRECISION;
     }
 
     function getHealthFactor(address user) public view returns (uint256) {
@@ -431,11 +391,7 @@ contract DHCEngine is ReentrancyGuard {
         (totalDhcMinted, collateralValueInUsd) = _getAccountInformation(user);
     }
 
-    function getTokenPriceFeedAddress(address token)
-        public
-        view
-        returns (address)
-    {
+    function getTokenPriceFeedAddress(address token) public view returns (address) {
         return s_priceFeeds[token];
     }
 

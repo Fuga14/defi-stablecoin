@@ -1,0 +1,154 @@
+{
+ "stats": {
+  "suites": 6,
+  "tests": 10,
+  "passes": 10,
+  "pending": 0,
+  "failures": 0
+ },
+ "tests": [
+  {
+   "title": "Should revert error if length of token addresses is not equal to length of price feed addresses",
+   "fullTitle": "DHCEngine Unit Test DHCEngine Constructor Tests Should revert error if length of token addresses is not equal to length of price feed addresses",
+   "file": "test\\unit\\DHCEngine.spec.js",
+   "currentRetry": 0,
+   "err": {}
+  },
+  {
+   "title": "Should return correct price feed address of token",
+   "fullTitle": "DHCEngine Unit Test DHCEngine Constructor Tests Should return correct price feed address of token",
+   "file": "test\\unit\\DHCEngine.spec.js",
+   "currentRetry": 0,
+   "err": {}
+  },
+  {
+   "title": "Should add all token collateral addresses into 1 single array",
+   "fullTitle": "DHCEngine Unit Test DHCEngine Constructor Tests Should add all token collateral addresses into 1 single array",
+   "file": "test\\unit\\DHCEngine.spec.js",
+   "currentRetry": 0,
+   "err": {}
+  },
+  {
+   "title": "Should return value in usd of eth amount",
+   "fullTitle": "DHCEngine Unit Test DHCEngine Price Tests Should return value in usd of eth amount",
+   "file": "test\\unit\\DHCEngine.spec.js",
+   "currentRetry": 0,
+   "err": {}
+  },
+  {
+   "title": "Should return eth amount converted from usd amount",
+   "fullTitle": "DHCEngine Unit Test DHCEngine Price Tests Should return eth amount converted from usd amount",
+   "file": "test\\unit\\DHCEngine.spec.js",
+   "currentRetry": 0,
+   "err": {}
+  },
+  {
+   "title": "Should return error if deposit amount is 0",
+   "fullTitle": "DHCEngine Unit Test DHCEngine Deposit Collateral Tests Should return error if deposit amount is 0",
+   "file": "test\\unit\\DHCEngine.spec.js",
+   "currentRetry": 0,
+   "err": {}
+  },
+  {
+   "title": "Should return error if deposit token is now allowed",
+   "fullTitle": "DHCEngine Unit Test DHCEngine Deposit Collateral Tests Should return error if deposit token is now allowed",
+   "file": "test\\unit\\DHCEngine.spec.js",
+   "currentRetry": 0,
+   "err": {}
+  },
+  {
+   "title": "Should emit event when we successfully deposit some collateral",
+   "fullTitle": "DHCEngine Unit Test DHCEngine Deposit Collateral Tests Should emit event when we successfully deposit some collateral",
+   "file": "test\\unit\\DHCEngine.spec.js",
+   "currentRetry": 0,
+   "err": {}
+  },
+  {
+   "title": "Should check for having some weth tokens on balance",
+   "fullTitle": "Mocks Unit Test WETH Contract Tests Should check for having some weth tokens on balance",
+   "file": "test\\unit\\Mocks.spec.js",
+   "currentRetry": 0,
+   "err": {}
+  },
+  {
+   "title": "Should allow to mint some tokens",
+   "fullTitle": "Mocks Unit Test WETH Contract Tests Should allow to mint some tokens",
+   "file": "test\\unit\\Mocks.spec.js",
+   "currentRetry": 0,
+   "err": {}
+  }
+ ],
+ "failures": [],
+ "passes": [
+  {
+   "title": "Should revert error if length of token addresses is not equal to length of price feed addresses",
+   "fullTitle": "DHCEngine Unit Test DHCEngine Constructor Tests Should revert error if length of token addresses is not equal to length of price feed addresses",
+   "file": "test\\unit\\DHCEngine.spec.js",
+   "currentRetry": 0,
+   "err": {}
+  },
+  {
+   "title": "Should return correct price feed address of token",
+   "fullTitle": "DHCEngine Unit Test DHCEngine Constructor Tests Should return correct price feed address of token",
+   "file": "test\\unit\\DHCEngine.spec.js",
+   "currentRetry": 0,
+   "err": {}
+  },
+  {
+   "title": "Should add all token collateral addresses into 1 single array",
+   "fullTitle": "DHCEngine Unit Test DHCEngine Constructor Tests Should add all token collateral addresses into 1 single array",
+   "file": "test\\unit\\DHCEngine.spec.js",
+   "currentRetry": 0,
+   "err": {}
+  },
+  {
+   "title": "Should return value in usd of eth amount",
+   "fullTitle": "DHCEngine Unit Test DHCEngine Price Tests Should return value in usd of eth amount",
+   "file": "test\\unit\\DHCEngine.spec.js",
+   "currentRetry": 0,
+   "err": {}
+  },
+  {
+   "title": "Should return eth amount converted from usd amount",
+   "fullTitle": "DHCEngine Unit Test DHCEngine Price Tests Should return eth amount converted from usd amount",
+   "file": "test\\unit\\DHCEngine.spec.js",
+   "currentRetry": 0,
+   "err": {}
+  },
+  {
+   "title": "Should return error if deposit amount is 0",
+   "fullTitle": "DHCEngine Unit Test DHCEngine Deposit Collateral Tests Should return error if deposit amount is 0",
+   "file": "test\\unit\\DHCEngine.spec.js",
+   "currentRetry": 0,
+   "err": {}
+  },
+  {
+   "title": "Should return error if deposit token is now allowed",
+   "fullTitle": "DHCEngine Unit Test DHCEngine Deposit Collateral Tests Should return error if deposit token is now allowed",
+   "file": "test\\unit\\DHCEngine.spec.js",
+   "currentRetry": 0,
+   "err": {}
+  },
+  {
+   "title": "Should emit event when we successfully deposit some collateral",
+   "fullTitle": "DHCEngine Unit Test DHCEngine Deposit Collateral Tests Should emit event when we successfully deposit some collateral",
+   "file": "test\\unit\\DHCEngine.spec.js",
+   "currentRetry": 0,
+   "err": {}
+  },
+  {
+   "title": "Should check for having some weth tokens on balance",
+   "fullTitle": "Mocks Unit Test WETH Contract Tests Should check for having some weth tokens on balance",
+   "file": "test\\unit\\Mocks.spec.js",
+   "currentRetry": 0,
+   "err": {}
+  },
+  {
+   "title": "Should allow to mint some tokens",
+   "fullTitle": "Mocks Unit Test WETH Contract Tests Should allow to mint some tokens",
+   "file": "test\\unit\\Mocks.spec.js",
+   "currentRetry": 0,
+   "err": {}
+  }
+ ]
+}

@@ -1,0 +1,238 @@
+{
+ "contracts\\DecentralizedHryvnaCoin.sol": {
+  "16": [],
+  "17": [],
+  "18": [],
+  "20": [],
+  "21": [],
+  "23": [],
+  "31": [],
+  "32": [],
+  "34": [],
+  "35": [],
+  "37": [],
+  "38": []
+ },
+ "contracts\\DHCEngine.sol": {
+  "90": [
+   {
+    "title": "Should return error if deposit amount is 0",
+    "file": "test\\unit\\DHCEngine.spec.js"
+   },
+   {
+    "title": "Should return error if deposit token is now allowed",
+    "file": "test\\unit\\DHCEngine.spec.js"
+   },
+   {
+    "title": "Should emit event when we successfully deposit some collateral",
+    "file": "test\\unit\\DHCEngine.spec.js"
+   }
+  ],
+  "91": [
+   {
+    "title": "Should return error if deposit amount is 0",
+    "file": "test\\unit\\DHCEngine.spec.js"
+   }
+  ],
+  "93": [
+   {
+    "title": "Should return error if deposit token is now allowed",
+    "file": "test\\unit\\DHCEngine.spec.js"
+   },
+   {
+    "title": "Should emit event when we successfully deposit some collateral",
+    "file": "test\\unit\\DHCEngine.spec.js"
+   }
+  ],
+  "97": [
+   {
+    "title": "Should return error if deposit token is now allowed",
+    "file": "test\\unit\\DHCEngine.spec.js"
+   },
+   {
+    "title": "Should emit event when we successfully deposit some collateral",
+    "file": "test\\unit\\DHCEngine.spec.js"
+   }
+  ],
+  "98": [
+   {
+    "title": "Should return error if deposit token is now allowed",
+    "file": "test\\unit\\DHCEngine.spec.js"
+   }
+  ],
+  "100": [
+   {
+    "title": "Should emit event when we successfully deposit some collateral",
+    "file": "test\\unit\\DHCEngine.spec.js"
+   }
+  ],
+  "112": [
+   {
+    "title": "Should revert error if length of token addresses is not equal to length of price feed addresses",
+    "file": "test\\unit\\DHCEngine.spec.js"
+   }
+  ],
+  "113": [
+   {
+    "title": "Should revert error if length of token addresses is not equal to length of price feed addresses",
+    "file": "test\\unit\\DHCEngine.spec.js"
+   }
+  ],
+  "115": [
+   {
+    "title": "Should revert error if length of token addresses is not equal to length of price feed addresses",
+    "file": "test\\unit\\DHCEngine.spec.js"
+   }
+  ],
+  "116": [
+   {
+    "title": "Should revert error if length of token addresses is not equal to length of price feed addresses",
+    "file": "test\\unit\\DHCEngine.spec.js"
+   }
+  ],
+  "117": [
+   {
+    "title": "Should revert error if length of token addresses is not equal to length of price feed addresses",
+    "file": "test\\unit\\DHCEngine.spec.js"
+   }
+  ],
+  "119": [
+   {
+    "title": "Should revert error if length of token addresses is not equal to length of price feed addresses",
+    "file": "test\\unit\\DHCEngine.spec.js"
+   }
+  ],
+  "137": [],
+  "138": [],
+  "155": [],
+  "156": [],
+  "172": [],
+  "173": [],
+  "174": [],
+  "183": [],
+  "193": [],
+  "195": [],
+  "197": [],
+  "205": [],
+  "206": [],
+  "207": [],
+  "208": [],
+  "210": [],
+  "230": [
+   {
+    "title": "Should emit event when we successfully deposit some collateral",
+    "file": "test\\unit\\DHCEngine.spec.js"
+   }
+  ],
+  "233": [
+   {
+    "title": "Should emit event when we successfully deposit some collateral",
+    "file": "test\\unit\\DHCEngine.spec.js"
+   }
+  ],
+  "238": [
+   {
+    "title": "Should emit event when we successfully deposit some collateral",
+    "file": "test\\unit\\DHCEngine.spec.js"
+   }
+  ],
+  "243": [
+   {
+    "title": "Should emit event when we successfully deposit some collateral",
+    "file": "test\\unit\\DHCEngine.spec.js"
+   }
+  ],
+  "244": [],
+  "253": [],
+  "259": [],
+  "273": [],
+  "275": [],
+  "276": [],
+  "277": [],
+  "278": [],
+  "283": [],
+  "284": [],
+  "301": [],
+  "302": [],
+  "307": [],
+  "308": [],
+  "310": [],
+  "319": [],
+  "320": [],
+  "328": [],
+  "332": [],
+  "333": [],
+  "346": [],
+  "347": [],
+  "353": [],
+  "357": [],
+  "365": [],
+  "371": [],
+  "372": [],
+  "373": [],
+  "383": [
+   {
+    "title": "Should return eth amount converted from usd amount",
+    "file": "test\\unit\\DHCEngine.spec.js"
+   }
+  ],
+  "386": [
+   {
+    "title": "Should return eth amount converted from usd amount",
+    "file": "test\\unit\\DHCEngine.spec.js"
+   }
+  ],
+  "387": [
+   {
+    "title": "Should return eth amount converted from usd amount",
+    "file": "test\\unit\\DHCEngine.spec.js"
+   }
+  ],
+  "398": [],
+  "399": [],
+  "400": [],
+  "401": [],
+  "403": [],
+  "411": [
+   {
+    "title": "Should return value in usd of eth amount",
+    "file": "test\\unit\\DHCEngine.spec.js"
+   }
+  ],
+  "414": [
+   {
+    "title": "Should return value in usd of eth amount",
+    "file": "test\\unit\\DHCEngine.spec.js"
+   }
+  ],
+  "417": [
+   {
+    "title": "Should return value in usd of eth amount",
+    "file": "test\\unit\\DHCEngine.spec.js"
+   }
+  ],
+  "422": [],
+  "423": [],
+  "431": [],
+  "439": [
+   {
+    "title": "Should return correct price feed address of token",
+    "file": "test\\unit\\DHCEngine.spec.js"
+   }
+  ],
+  "447": [],
+  "451": [
+   {
+    "title": "Should add all token collateral addresses into 1 single array",
+    "file": "test\\unit\\DHCEngine.spec.js"
+   }
+  ]
+ },
+ "contracts\\libs\\OracleLib.sol": {
+  "28": [],
+  "36": [],
+  "37": [],
+  "38": [],
+  "40": []
+ }
+}

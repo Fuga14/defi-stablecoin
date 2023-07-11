@@ -37,6 +37,8 @@ external & public view & pure functions
 
 CEI: CHECK -> EFFECTS -> INTERACTIONS
 
+Line 324 - last updated function is _calculateHealthFactor
+
 
 ### TESTING
 ✅Constructor test (need to deploy again)
@@ -50,4 +52,7 @@ CEI: CHECK -> EFFECTS -> INTERACTIONS
 ⚠️added a bunch of view functions
 ⚠️change latestRoundData to staleCheckLatestRoundData
 
+```shell 
+npm install --sve-dev solidity-coverage 
+```
 
