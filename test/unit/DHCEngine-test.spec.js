@@ -179,15 +179,133 @@ const { developmentChains, networkConfig } = require('../../helper-hardhat-confi
           await weth.mint(deployer.address, AMOUNT_TO_MINT);
           await weth.approve(DHCEngine.address, AMOUNT_TO_MINT);
           const tokenCollaterAddress = weth.address;
-          const collateralValue = ethers.utils.parseEther('0.05');
-          const amountDhcToMint = 80;
+          const collateralValue = ethers.utils.parseEther('1');
+          const amountDhcToMint = ethers.utils.parseEther('1800');
 
-          await DHCEngine.depositCollateral(tokenCollaterAddress, collateralValue);
-          const healthFactor = (100 * 50) / amountDhcToMint;
-          console.log(`Health factor of user: ${healthFactor}`);
-          // await expect(DHCEngine.mintDhc(amountDhcToMint))
-          //   .to.be.revertedWithCustomError(DHCEngine, 'DHCEngine__BreaksHealthFactor')
-          //   .withArgs(healthFactor);
+          const tx = await DHCEngine.depositCollateral(tokenCollaterAddress, collateralValue);
+          await tx.wait();
+
+          const accountInformation = await DHCEngine.getAccountInformation(deployer.address);
+          const collateralValueInUsd = accountInformation.collateralValueInUsd;
+
+          const expectedHealthFactor = await DHCEngine.calculateHealthFactor(
+            amountDhcToMint,
+            collateralValueInUsd
+          );
+          // console.log(`Expected health factor: ${expectedHealthFactor.toString()}`);
+
+          await expect(DHCEngine.mintDhc(amountDhcToMint))
+            .to.be.revertedWithCustomError(DHCEngine, 'DHCEngine__BreaksHealthFactor')
+            .withArgs(expectedHealthFactor);
+        });
+
+        it('Should revert on mint fail', async () => {});
+      });
+
+      describe('Deposit Collateral and mint DHC', () => {
+        it('Should successfuly allow to Deposit and mint DHC', async () => {
+          await weth.mint(deployer.address, AMOUNT_TO_MINT);
+          await weth.approve(DHCEngine.address, AMOUNT_TO_MINT);
+
+          const tokenCollaterAddress = weth.address;
+          const collateralValue = ethers.utils.parseEther('1'); // $2000 - 1 ETH
+          const amountDhcToMint = ethers.utils.parseEther('900'); // $1200 coins
+
+          await DHCEngine.depostitCollateralandMintDHC(
+            tokenCollaterAddress,
+            collateralValue,
+            amountDhcToMint
+          );
+
+          const expectedBalance = amountDhcToMint;
+          const actualBalance = await DHC.balanceOf(deployer.address);
+          assert.equal(actualBalance.toString(), expectedBalance.toString());
+        });
+
+        it('Should revert error if breaks health factor', async () => {
+          await weth.mint(deployer.address, AMOUNT_TO_MINT);
+          await weth.approve(DHCEngine.address, AMOUNT_TO_MINT);
+
+          const tokenCollaterAddress = weth.address;
+          const collateralValue = ethers.utils.parseEther('1');
+          const amountDhcToMint = await DHCEngine.getUsdValue(
+            weth.address,
+            ethers.utils.parseEther('1')
+          );
+
+          const expectedHealthFactor = await DHCEngine.calculateHealthFactor(
+            amountDhcToMint,
+            amountDhcToMint
+          );
+
+          await expect(
+            DHCEngine.depostitCollateralandMintDHC(
+              tokenCollaterAddress,
+              collateralValue,
+              amountDhcToMint
+            )
+          )
+            .to.be.revertedWithCustomError(DHCEngine, 'DHCEngine__BreaksHealthFactor')
+            .withArgs(expectedHealthFactor);
+        });
+      });
+
+      describe('Burn DHC Tests', () => {
+        it('Shoult revert if amount to burn is zero', async () => {
+          const amountToBurn = 0;
+          await expect(DHCEngine.burnDhc(amountToBurn)).to.be.revertedWithCustomError(
+            DHCEngine,
+            'DHCEngine__NeedsMoreThanZero'
+          );
+        });
+
+        it('Should allow to burn some DHC tokens', async () => {
+          await weth.mint(deployer.address, AMOUNT_TO_MINT);
+          await weth.approve(DHCEngine.address, AMOUNT_TO_MINT);
+
+          const tokenCollaterAddress = weth.address;
+          const collateralValue = ethers.utils.parseEther('1'); // $2000 - 1 ETH
+          const amountDhcToMint = ethers.utils.parseEther('900'); // $1200 coins
+
+          await DHCEngine.depostitCollateralandMintDHC(
+            tokenCollaterAddress,
+            collateralValue,
+            amountDhcToMint
+          );
+          const userBalanceAfterMinting = await DHC.balanceOf(deployer.address);
+          // console.log(userBalanceAfterMinting.toString());
+
+          // BURNING DHC
+          const amountToBurn = ethers.utils.parseEther('100');
+          await DHC.approve(DHCEngine.address, amountToBurn);
+          await DHCEngine.burnDhc(amountToBurn);
+
+          const expectedUserBalance = userBalanceAfterMinting - amountToBurn;
+
+          const updatedUserBalance = await DHC.balanceOf(deployer.address);
+
+          assert.equal(updatedUserBalance.toString(), expectedUserBalance.toString());
+        });
+
+        it('Should revert error if we want to burn more than we have', async () => {
+          await weth.mint(deployer.address, AMOUNT_TO_MINT);
+          await weth.approve(DHCEngine.address, AMOUNT_TO_MINT);
+
+          const tokenCollaterAddress = weth.address;
+          const collateralValue = ethers.utils.parseEther('1'); // $2000 - 1 ETH
+          const amountDhcToMint = ethers.utils.parseEther('900'); // $1200 coins
+
+          await DHCEngine.depostitCollateralandMintDHC(
+            tokenCollaterAddress,
+            collateralValue,
+            amountDhcToMint
+          );
+          const userBalanceAfterMinting = await DHC.balanceOf(deployer.address);
+          // console.log(userBalanceAfterMinting.toString());
+
+          const amountToBurn = ethers.utils.parseEther('1100');
+          await DHC.approve(DHCEngine.address, amountDhcToMint);
+          await expect(DHCEngine.burnDhc(amountToBurn)).to.be.reverted;
         });
       });
     });

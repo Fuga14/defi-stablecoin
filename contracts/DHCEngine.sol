@@ -34,7 +34,7 @@ contract DHCEngine is ReentrancyGuard {
     error DHCEngine__NotAllowedToken();
     error DHCEngine__TransferFailed();
     error DHCEngine__MintFailed();
-    error DHCEngine__BreaksHealthFactor(uint256 healthFactor);
+    error DHCEngine__BreaksHealthFactor(uint256 healthFactorValue);
     error DHCEngine__HealthFactorisOK();
     error DHCEngine__HealthFactorIsNotImporved();
 
@@ -44,13 +44,12 @@ contract DHCEngine is ReentrancyGuard {
     // State variables
     //////////////////////
 
+    uint256 private constant LIQUIDATION_THRESHOLD = 50; // This means you need to be 200% over-collateralized
+    uint256 private constant LIQUIDATION_BONUS = 10;
+    uint256 private constant MIN_HEALTH_FACTOR = 1e18;
+    uint256 private constant PRECISION = 1e18;
     uint256 private constant ADDITIONAL_FEED_PRECISION = 1e10;
     uint256 private constant FEED_PRECISION = 1e8;
-    uint256 private constant PRECISION = 1e18;
-    uint256 private constant LIQUIDATION_THRESHOLD = 50; // This means you need to be 200% over-collateralized
-    uint256 private constant LIQUIDATION_PRECISION = 100;
-    uint256 private constant MIN_HEALTH_FACTOR = 1e18;
-    uint256 private constant LIQUIDATION_BONUS = 10;
 
     /// @dev Mapping of token address to price feed address
     mapping(address => address) private s_priceFeeds;
@@ -182,8 +181,7 @@ contract DHCEngine is ReentrancyGuard {
         // We should implement a feature to liquidate in event the protocol is insolvent
         // And sweep extra amounts into a treasury
 
-        uint256 bonusCollateral = (tokenAmountFromDebtCovered * LIQUIDATION_BONUS) /
-            LIQUIDATION_PRECISION;
+        uint256 bonusCollateral = (tokenAmountFromDebtCovered * LIQUIDATION_BONUS) / 100;
         uint256 totalCollateralToReedem = tokenAmountFromDebtCovered + bonusCollateral;
         _redeemCollateral(user, msg.sender, collateralToken, totalCollateralToReedem);
 
@@ -252,7 +250,7 @@ contract DHCEngine is ReentrancyGuard {
 
     function burnDhc(uint256 amount) public moreThanZero(amount) nonReentrant {
         _burnDhc(amount, msg.sender, msg.sender);
-        _revertIfHealthFactorIsBroken(msg.sender); // ❓❓❓❓
+        _revertIfHealthFactorIsBroken(msg.sender); // probably will never hit
     }
 
     /////////////////////////////////
@@ -356,6 +354,13 @@ contract DHCEngine is ReentrancyGuard {
         return (usdAmountInWei * PRECISION) / (uint256(price) * ADDITIONAL_FEED_PRECISION);
     }
 
+    /**
+     *
+     * @param user Address of the user
+     * @notice This function convert all collaterals of the given
+     *         user from all possible tokens to USD
+     * @notice Returns value: totalCollateralValueInUsd * 1e18
+     */
     function getAccountCollateralValue(address user)
         public
         view
@@ -396,7 +401,7 @@ contract DHCEngine is ReentrancyGuard {
     }
 
     function getCollateralDepositedAmountOfUser(address user, address token)
-        public
+        external
         view
         returns (uint256)
     {
@@ -405,5 +410,9 @@ contract DHCEngine is ReentrancyGuard {
 
     function getCollateralTokens() public view returns (address[] memory) {
         return s_collateralTokens;
+    }
+
+    function getMinHealthFactor() external pure returns (uint256) {
+        return MIN_HEALTH_FACTOR;
     }
 }
