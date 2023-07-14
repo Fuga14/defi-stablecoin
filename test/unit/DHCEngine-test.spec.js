@@ -291,21 +291,75 @@ const { developmentChains, networkConfig } = require('../../helper-hardhat-confi
           await weth.mint(deployer.address, AMOUNT_TO_MINT);
           await weth.approve(DHCEngine.address, AMOUNT_TO_MINT);
 
-          const tokenCollaterAddress = weth.address;
+          const tokenCollateralAddress = weth.address;
           const collateralValue = ethers.utils.parseEther('1'); // $2000 - 1 ETH
-          const amountDhcToMint = ethers.utils.parseEther('900'); // $1200 coins
+          const amountDhcToMint = ethers.utils.parseEther('900'); // $900 coins
 
           await DHCEngine.depostitCollateralandMintDHC(
-            tokenCollaterAddress,
+            tokenCollateralAddress,
             collateralValue,
             amountDhcToMint
           );
-          const userBalanceAfterMinting = await DHC.balanceOf(deployer.address);
+          // const userBalanceAfterMinting = await DHC.balanceOf(deployer.address);
           // console.log(userBalanceAfterMinting.toString());
 
           const amountToBurn = ethers.utils.parseEther('1100');
           await DHC.approve(DHCEngine.address, amountDhcToMint);
           await expect(DHCEngine.burnDhc(amountToBurn)).to.be.reverted;
         });
+      });
+
+      describe('Redeem Collateral Tests', () => {
+        it('Should revert error if amount redeeming is 0', async () => {
+          await weth.mint(deployer.address, AMOUNT_TO_MINT);
+          await weth.approve(DHCEngine.address, AMOUNT_TO_MINT);
+
+          const tokenCollateralAddress = weth.address;
+          const collateralValue = ethers.utils.parseEther('1'); // $2000
+          const amountDhcToMint = ethers.utils.parseEther('900');
+
+          await DHCEngine.depostitCollateralandMintDHC(
+            tokenCollateralAddress,
+            collateralValue,
+            amountDhcToMint
+          );
+
+          const amountToRedeem = 0;
+
+          await expect(
+            DHCEngine.redeemCollateral(tokenCollateralAddress, amountToRedeem)
+          ).to.be.revertedWithCustomError(DHCEngine, 'DHCEngine__NeedsMoreThanZero');
+        });
+        it('Should allow user to successfully redeem collateral', async () => {
+          await weth.mint(deployer.address, AMOUNT_TO_MINT);
+          await weth.approve(DHCEngine.address, AMOUNT_TO_MINT);
+
+          const tokenCollateralAddress = weth.address;
+          const collateralValue = ethers.utils.parseEther('2'); // $4000
+          const amountDhcToMint = ethers.utils.parseEther('900');
+
+          await DHCEngine.depostitCollateralandMintDHC(
+            tokenCollateralAddress,
+            collateralValue,
+            amountDhcToMint
+          );
+
+          const depositedAmount = await DHCEngine.getCollateralDepositedAmountOfUser(
+            deployer.address,
+            tokenCollateralAddress
+          );
+          console.log(depositedAmount);
+
+          const amountToRedeem = ethers.utils.parseEther('0.5');
+          await DHCEngine.redeemCollateral(tokenCollateralAddress, amountToRedeem);
+
+          const depositedAmountUpdated = await DHCEngine.getCollateralDepositedAmountOfUser(
+            deployer.address,
+            tokenCollateralAddress
+          );
+          const expectedDepositedAmount = ethers.utils.parseEther('1.5');
+          assert.equal(depositedAmountUpdated.toString(), expectedDepositedAmount.toString());
+        });
+        it('Should revert error if user breaks health factor after redeeming collateral', async () => {});
       });
     });

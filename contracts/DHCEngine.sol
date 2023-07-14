@@ -141,13 +141,13 @@ contract DHCEngine is ReentrancyGuard {
      * @notice The function includes checking health factor after redeeming collaterals
      *         This function will withdraw your collateral and burn DHC in 1 tx
      */
-    function reedemCollateralForDHC(
+    function redeemCollateralForDHC(
         address tokenCollateralAddress,
         uint256 amountCollateral,
         uint256 amountDhcToBurn
     ) external {
         burnDhc(amountDhcToBurn);
-        reedemCollateral(tokenCollateralAddress, amountCollateral);
+        redeemCollateral(tokenCollateralAddress, amountCollateral);
     }
 
     /**
@@ -223,7 +223,7 @@ contract DHCEngine is ReentrancyGuard {
     }
 
     // health factor must be more than 1 after collateral pulled
-    function reedemCollateral(address tokenCollateralAddress, uint256 amountCollateral)
+    function redeemCollateral(address tokenCollateralAddress, uint256 amountCollateral)
         public
         moreThanZero(amountCollateral)
         nonReentrant

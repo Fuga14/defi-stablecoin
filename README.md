@@ -43,8 +43,8 @@ Line 324 - last updated function is _calculateHealthFactor
 ### TESTING
 ✅Constructor test (need to deploy again)
 ✅getTokenAmountFromUsd
-❌depositCollateral
-❌getAccountInformation (can deposit collateral and get information from account)
+✅depositCollateral
+✅getAccountInformation (can deposit collateral and get information from account)
 
 
 ⚠️calculate health factor function
@@ -53,6 +53,6 @@ Line 324 - last updated function is _calculateHealthFactor
 ⚠️change latestRoundData to staleCheckLatestRoundData
 
 ```shell 
-npm install --sve-dev solidity-coverage 
+npm install --save-dev solidity-coverage 
 ```
 
