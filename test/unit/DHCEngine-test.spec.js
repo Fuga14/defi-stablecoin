@@ -465,8 +465,76 @@ const { developmentChains, networkConfig } = require('../../helper-hardhat-confi
       });
 
       describe('Redeem Collateral For DHC Tests', () => {
-        it('Revert error if values are 0', async () => {});
-        it('Should allow to successfully redeem and burn DHC', async () => {});
+        it('Reverts error if values are 0', async () => {
+          await weth.mint(deployer.address, AMOUNT_TO_MINT);
+          await weth.approve(DHCEngine.address, AMOUNT_TO_MINT);
+
+          const tokenCollateralAddress = weth.address;
+          const collateralValue = ethers.utils.parseEther('2'); // $4000
+          const amountDhcToMint = ethers.utils.parseEther('900');
+
+          await DHCEngine.depostitCollateralandMintDHC(
+            tokenCollateralAddress,
+            collateralValue,
+            amountDhcToMint
+          );
+
+          const redeemCollateralValue = ethers.utils.parseEther('0.01');
+          const redeemAmountDhc = ethers.utils.parseEther('100');
+
+          await DHC.approve(DHCEngine.address, redeemAmountDhc);
+
+          // if collateral is 0
+          await expect(
+            DHCEngine.redeemCollateralForDHC(tokenCollateralAddress, 0, redeemAmountDhc)
+          ).to.be.revertedWithCustomError(DHCEngine, 'DHCEngine__NeedsMoreThanZero');
+          // if dhc is 0
+          await expect(
+            DHCEngine.redeemCollateralForDHC(tokenCollateralAddress, redeemCollateralValue, 0)
+          ).to.be.revertedWithCustomError(DHCEngine, 'DHCEngine__NeedsMoreThanZero');
+        });
+        it('Should allow to successfully redeem and burn DHC', async () => {
+          await weth.mint(deployer.address, AMOUNT_TO_MINT);
+          await weth.approve(DHCEngine.address, AMOUNT_TO_MINT);
+
+          const tokenCollateralAddress = weth.address;
+          const collateralValue = ethers.utils.parseEther('2'); // $4000
+          const amountDhcToMint = ethers.utils.parseEther('900');
+
+          const depositTx = await DHCEngine.depostitCollateralandMintDHC(
+            tokenCollateralAddress,
+            collateralValue,
+            amountDhcToMint
+          );
+          await depositTx.wait();
+
+          const redeemCollateralValue = ethers.utils.parseEther('0.01');
+          const redeemAmountDhc = ethers.utils.parseEther('100');
+
+          const approveTx = await DHC.approve(DHCEngine.address, redeemAmountDhc);
+          await approveTx.wait();
+
+          const redeemingTx = await DHCEngine.redeemCollateralForDHC(
+            tokenCollateralAddress,
+            redeemCollateralValue,
+            redeemAmountDhc
+          );
+
+          await redeemingTx.wait();
+
+          const accountInforamtion = await DHCEngine.getAccountInformation(deployer.address);
+          const totalDhcMinted = accountInforamtion.totalDhcMinted;
+          const collateralValueInUsd = accountInforamtion.collateralValueInUsd;
+
+          const collateralValueInEth = collateralValue.sub(redeemCollateralValue);
+          const expectedCollateralValueInUsd = await DHCEngine.getUsdValue(
+            weth.address,
+            collateralValueInEth
+          );
+          const expectedDhcAmount = amountDhcToMint.sub(redeemAmountDhc);
+          assert.equal(totalDhcMinted.toString(), expectedDhcAmount.toString());
+          assert.equal(collateralValueInUsd.toString(), expectedCollateralValueInUsd.toString());
+        });
       });
 
       describe('Calculate Health Factor Tests', () => {
@@ -486,10 +554,11 @@ const { developmentChains, networkConfig } = require('../../helper-hardhat-confi
           const minHealthFactor = await DHCEngine.getMinHealthFactor();
           assert.equal(minHealthFactor.toString(), MIN_HEALTH_FACTOR.toString());
         });
-        // it('', async () => {});
-        // it('', async () => {});
-        // it('', async () => {});
-        // it('', async () => {});
-        // it('', async () => {});
       });
+
+      // TODO redeemCollateralForDhc tests
+      // TODO Liquidation tests
+      // TODO Add mocks for Transfer Failed cases (transferFrom and transfer)
+      // TODO Add mocks for failed mint cases
+      // ? Reentrancy guard tests
     });
