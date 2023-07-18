@@ -13,6 +13,9 @@ const { developmentChains, networkConfig } = require('../../helper-hardhat-confi
       let ethUsdPriceFeed, btcUsdPriceFeed;
 
       const AMOUNT_TO_MINT = ethers.utils.parseEther('10');
+      const UINT256_MAX =
+        '115792089237316195423570985008687907853269984665640564039457584007913129639935';
+      const MIN_HEALTH_FACTOR = ethers.utils.parseEther('1');
 
       beforeEach(async () => {
         [deployer, user1, user2] = await ethers.getSigners();
@@ -348,7 +351,7 @@ const { developmentChains, networkConfig } = require('../../helper-hardhat-confi
             deployer.address,
             tokenCollateralAddress
           );
-          console.log(depositedAmount);
+          // console.log(depositedAmount);
 
           const amountToRedeem = ethers.utils.parseEther('0.5');
           await DHCEngine.redeemCollateral(tokenCollateralAddress, amountToRedeem);
@@ -360,6 +363,133 @@ const { developmentChains, networkConfig } = require('../../helper-hardhat-confi
           const expectedDepositedAmount = ethers.utils.parseEther('1.5');
           assert.equal(depositedAmountUpdated.toString(), expectedDepositedAmount.toString());
         });
-        it('Should revert error if user breaks health factor after redeeming collateral', async () => {});
+        it('Should revert error if user breaks health factor after redeeming collateral', async () => {
+          await weth.mint(deployer.address, AMOUNT_TO_MINT);
+          await weth.approve(DHCEngine.address, AMOUNT_TO_MINT);
+
+          const tokenCollateralAddress = await weth.address;
+          const collateralValue = ethers.utils.parseEther('1');
+          const amountDhcToMint = ethers.utils.parseEther('850');
+
+          await DHCEngine.depostitCollateralandMintDHC(
+            tokenCollateralAddress,
+            collateralValue,
+            amountDhcToMint
+          );
+          const amountToRedeemInWei = ethers.utils.parseEther('302');
+          const amountToRedeem = await DHCEngine.getTokenAmountFromUsd(
+            weth.address,
+            amountToRedeemInWei
+          );
+          const accountCollateralValue = await DHCEngine.getAccountCollateralValue(
+            deployer.address
+          );
+          const userCollateralBalance = accountCollateralValue.sub(amountToRedeemInWei);
+          // console.log(userCollateralBalance.toString()); // 1698 000000000000000000
+
+          // const userCollateralBalanceInUsd = await DHCEngine.getUsdValue(
+          //   weth.address,
+          //   userCollateralBalance
+          // );
+          // console.log(`userCollateralBalanceInUsd: ${userCollateralBalanceInUsd}`);
+
+          const expectedHealthFactor = await DHCEngine.calculateHealthFactor(
+            amountDhcToMint,
+            userCollateralBalance
+          );
+          // console.log(expectedHealthFactor.toString()); // 998823529411764705
+
+          await expect(DHCEngine.redeemCollateral(weth.address, amountToRedeem))
+            .to.be.revertedWithCustomError(DHCEngine, 'DHCEngine__BreaksHealthFactor')
+            .withArgs(expectedHealthFactor);
+        });
+        it('Should emit event when redeeming collateral is successful', async () => {
+          await weth.mint(deployer.address, AMOUNT_TO_MINT);
+          await weth.approve(DHCEngine.address, AMOUNT_TO_MINT);
+
+          const tokenCollateralAddress = weth.address;
+          const collateralValue = ethers.utils.parseEther('2'); // $4000
+          const amountDhcToMint = ethers.utils.parseEther('900');
+
+          await DHCEngine.depostitCollateralandMintDHC(
+            tokenCollateralAddress,
+            collateralValue,
+            amountDhcToMint
+          );
+
+          const depositedAmount = await DHCEngine.getCollateralDepositedAmountOfUser(
+            deployer.address,
+            tokenCollateralAddress
+          );
+          // console.log(depositedAmount);
+
+          const amountToRedeem = ethers.utils.parseEther('0.5');
+          await expect(DHCEngine.redeemCollateral(tokenCollateralAddress, amountToRedeem))
+            .to.emit(DHCEngine, 'CollateralRedeemed')
+            .withArgs(deployer.address, deployer.address, tokenCollateralAddress, amountToRedeem);
+        });
+
+        it('Should revert when tranfer fails', async () => {
+          const MockFailedTransferFactory = await ethers.getContractFactory('MockFailedTransfer');
+          const mockFailedTransfer = await MockFailedTransferFactory.deploy();
+          await mockFailedTransfer.deployed();
+
+          const newDHCEngineFactory = await ethers.getContractFactory('DHCEngine');
+          const newDHCEngine = await newDHCEngineFactory.deploy(
+            [mockFailedTransfer.address],
+            [ethUsdPriceFeed.address],
+            mockFailedTransfer.address
+          );
+
+          await mockFailedTransfer.mint(deployer.address, AMOUNT_TO_MINT);
+          await mockFailedTransfer.approve(newDHCEngine.address, AMOUNT_TO_MINT);
+
+          await mockFailedTransfer.transferOwnership(newDHCEngine.address);
+
+          const tokenCollateralAddress = mockFailedTransfer.address;
+          const collateralValue = ethers.utils.parseEther('2'); // $4000
+          const amountDhcToMint = ethers.utils.parseEther('900');
+
+          await newDHCEngine.depostitCollateralandMintDHC(
+            tokenCollateralAddress,
+            collateralValue,
+            amountDhcToMint
+          );
+
+          const amountToRedeem = ethers.utils.parseEther('0.01');
+
+          await expect(
+            newDHCEngine.redeemCollateral(tokenCollateralAddress, amountToRedeem)
+          ).to.be.revertedWithCustomError(newDHCEngine, 'DHCEngine__TransferFailed');
+        });
+      });
+
+      describe('Redeem Collateral For DHC Tests', () => {
+        it('Revert error if values are 0', async () => {});
+        it('Should allow to successfully redeem and burn DHC', async () => {});
+      });
+
+      describe('Calculate Health Factor Tests', () => {
+        it('Should return max int value if total minted is 0', async () => {
+          const totalDhcMinted = 0;
+          const collateralValueInUsd = ethers.utils.parseEther('2000');
+          const expectedHealthFactor = UINT256_MAX;
+          const userHealthFactor = await DHCEngine.calculateHealthFactor(
+            totalDhcMinted,
+            collateralValueInUsd
+          );
+          const readUserHealthFactor = await DHCEngine.getHealthFactor(deployer.address);
+          assert.equal(userHealthFactor.toString(), expectedHealthFactor.toString());
+          assert.equal(readUserHealthFactor.toString(), expectedHealthFactor.toString());
+        });
+        it('Should be able to get minimal health factor value', async () => {
+          const minHealthFactor = await DHCEngine.getMinHealthFactor();
+          assert.equal(minHealthFactor.toString(), MIN_HEALTH_FACTOR.toString());
+        });
+        // it('', async () => {});
+        // it('', async () => {});
+        // it('', async () => {});
+        // it('', async () => {});
+        // it('', async () => {});
       });
     });

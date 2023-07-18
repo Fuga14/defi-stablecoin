@@ -280,15 +280,16 @@ contract DHCEngine is ReentrancyGuard {
         address to,
         address tokenCollateralAddress,
         uint256 amountCollateral
-    ) private {
+    ) public {
         s_collateralDeposited[from][tokenCollateralAddress] -= amountCollateral;
-        emit CollateralRedeemed(from, to, tokenCollateralAddress, amountCollateral);
 
         // check health factor for being more than 1
         bool success = IERC20(tokenCollateralAddress).transfer(to, amountCollateral);
         if (!success) {
             revert DHCEngine__TransferFailed();
         }
+
+        emit CollateralRedeemed(from, to, tokenCollateralAddress, amountCollateral);
     }
 
     ///////////////////////////////////////

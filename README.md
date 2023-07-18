@@ -31,28 +31,26 @@ private
 internal & private view & pure functions
 external & public view & pure functions
 
-// 2:29:00 / 4:47:24
 
--Make transferOwnership to Engine❗❗❗
+
+❗Make transferOwnership to Engine
 
 CEI: CHECK -> EFFECTS -> INTERACTIONS
 
-Line 324 - last updated function is _calculateHealthFactor
+⚠️Use more function get Health Factor 
+
+Redeem tests:
+❌If transfer fails
+✅Redeem amount is zero 
+✅Can redeem amount
+❌Revert error if redeeming breaks health factor
+❌Emit event when redeeming collateral
 
 
-### TESTING
-✅Constructor test (need to deploy again)
-✅getTokenAmountFromUsd
-✅depositCollateral
-✅getAccountInformation (can deposit collateral and get information from account)
-
-
-⚠️calculate health factor function
-⚠️set health factor if debt is 0 (3:15:00)
+✅calculate health factor function
+✅set health factor if debt is 0 (3:15:00)
 ⚠️added a bunch of view functions
 ⚠️change latestRoundData to staleCheckLatestRoundData
 
-```shell 
-npm install --save-dev solidity-coverage 
-```
+
 
