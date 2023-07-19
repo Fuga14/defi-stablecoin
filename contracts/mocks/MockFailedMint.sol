@@ -26,7 +26,7 @@ contract MockFailedMint is ERC20Burnable, Ownable {
     function mint(
         address, /*_to*/
         uint256 /*_amount*/
-    ) external onlyOwner returns (bool) {
+    ) external view onlyOwner returns (bool) {
         return false;
     }
 }
