@@ -250,7 +250,7 @@ contract DHCEngine is ReentrancyGuard {
 
     function burnDhc(uint256 amount) public moreThanZero(amount) nonReentrant {
         _burnDhc(amount, msg.sender, msg.sender);
-        _revertIfHealthFactorIsBroken(msg.sender); // probably will never hit
+        _revertIfHealthFactorIsBroken(msg.sender); // ? probably will never hit
     }
 
     /////////////////////////////////

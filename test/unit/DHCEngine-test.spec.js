@@ -167,6 +167,34 @@ const { developmentChains, networkConfig } = require('../../helper-hardhat-confi
           const userDhcBalance = await DHC.balanceOf(deployer.address);
           assert.equal(userDhcBalance.toString(), '0');
         });
+
+        it('Should reverts error if transfer failed', async () => {
+          const failedTransferFromFactory = await ethers.getContractFactory(
+            'MockFailedTransferFrom'
+          );
+          const failedTransferFrom = await failedTransferFromFactory.deploy();
+          await failedTransferFrom.deployed();
+
+          const dhcEngineFactory = await ethers.getContractFactory('DHCEngine');
+          const dhcEngine = await dhcEngineFactory.deploy(
+            [failedTransferFrom.address],
+            [ethUsdPriceFeed.address],
+            failedTransferFrom.address
+          );
+          await dhcEngine.deployed();
+
+          await failedTransferFrom.mint(deployer.address, AMOUNT_TO_MINT);
+          await failedTransferFrom.approve(dhcEngine.address, AMOUNT_TO_MINT);
+
+          await failedTransferFrom.transferOwnership(dhcEngine.address);
+
+          const tokenCollateralAddress = failedTransferFrom.address;
+          const collateralValue = ethers.utils.parseEther('1');
+
+          await expect(
+            dhcEngine.depositCollateral(tokenCollateralAddress, collateralValue)
+          ).to.be.revertedWithCustomError(dhcEngine, 'DHCEngine__TransferFailed');
+        });
       });
 
       describe('Mint DHC Tests', () => {
@@ -310,6 +338,45 @@ const { developmentChains, networkConfig } = require('../../helper-hardhat-confi
           await DHC.approve(DHCEngine.address, amountDhcToMint);
           await expect(DHCEngine.burnDhc(amountToBurn)).to.be.reverted;
         });
+
+        it('Should reverts error if transfer failed', async () => {
+          const failedTransferFromFactory = await ethers.getContractFactory(
+            'MockFailedTransferFrom'
+          );
+          const failedTransferFrom = await failedTransferFromFactory.deploy();
+          await failedTransferFrom.deployed();
+
+          const dhcEngineFactory = await ethers.getContractFactory('DHCEngine');
+          const dhcEngine = await dhcEngineFactory.deploy(
+            [weth.address],
+            [ethUsdPriceFeed.address],
+            failedTransferFrom.address
+          );
+          await dhcEngine.deployed();
+          await failedTransferFrom.transferOwnership(dhcEngine.address);
+
+          await weth.mint(deployer.address, AMOUNT_TO_MINT);
+          await weth.approve(dhcEngine.address, AMOUNT_TO_MINT);
+
+          const tokenCollateralAddress = weth.address;
+          const collateralValue = ethers.utils.parseEther('1'); // $2000 - 1 ETH
+          const amountDhcToMint = ethers.utils.parseEther('100'); // $100 coins
+
+          await dhcEngine.depostitCollateralandMintDHC(
+            tokenCollateralAddress,
+            collateralValue,
+            amountDhcToMint
+          );
+
+          // const burnAmount = ethers.utils.parseEther('50');
+          const burnAmount = '50';
+          await failedTransferFrom.approve(dhcEngine.address, burnAmount);
+
+          await expect(dhcEngine.burnDhc(burnAmount)).to.be.revertedWithCustomError(
+            dhcEngine,
+            'DHCEngine__TransferFailed'
+          );
+        });
       });
 
       describe('Redeem Collateral Tests', () => {
@@ -440,7 +507,8 @@ const { developmentChains, networkConfig } = require('../../helper-hardhat-confi
             [ethUsdPriceFeed.address],
             mockFailedTransfer.address
           );
-
+          await newDHCEngine.deployed();
+          // ! ------------------------------------------------------------------------
           await mockFailedTransfer.mint(deployer.address, AMOUNT_TO_MINT);
           await mockFailedTransfer.approve(newDHCEngine.address, AMOUNT_TO_MINT);
 
@@ -556,7 +624,6 @@ const { developmentChains, networkConfig } = require('../../helper-hardhat-confi
         });
       });
 
-      // TODO redeemCollateralForDhc tests
       // TODO Liquidation tests
       // TODO Add mocks for Transfer Failed cases (transferFrom and transfer)
       // TODO Add mocks for failed mint cases
