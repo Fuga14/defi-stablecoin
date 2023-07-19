@@ -30,6 +30,7 @@ contract DHCEngine is ReentrancyGuard {
     // Errors
     //////////////////////
     error DHCEngine__NeedsMoreThanZero();
+    error DHCEngine__CannotLiquidateYourself();
     error DHCEngine__TokenAddressesAndPriceFeedAddressesMustBeSameLength();
     error DHCEngine__NotAllowedToken();
     error DHCEngine__TransferFailed();
@@ -44,7 +45,7 @@ contract DHCEngine is ReentrancyGuard {
     // State variables
     //////////////////////
 
-    uint256 private constant LIQUIDATION_THRESHOLD = 50; // This means you need to be 200% over-collateralized
+    uint256 private constant LIQUIDATION_THRESHOLD = 50; // ! This means you need to be 200% over-collateralized
     uint256 private constant LIQUIDATION_BONUS = 10;
     uint256 private constant MIN_HEALTH_FACTOR = 1e18;
     uint256 private constant PRECISION = 1e18;
@@ -163,6 +164,9 @@ contract DHCEngine is ReentrancyGuard {
         address user,
         uint256 debtToCover
     ) external moreThanZero(debtToCover) nonReentrant {
+        if (msg.sender == user) {
+            revert DHCEngine__CannotLiquidateYourself();
+        }
         uint256 startingUserHealthFactor = _healthFactor(user);
         if (startingUserHealthFactor >= MIN_HEALTH_FACTOR) {
             revert DHCEngine__HealthFactorisOK();
@@ -397,10 +401,6 @@ contract DHCEngine is ReentrancyGuard {
         (totalDhcMinted, collateralValueInUsd) = _getAccountInformation(user);
     }
 
-    function getTokenPriceFeedAddress(address token) public view returns (address) {
-        return s_priceFeeds[token];
-    }
-
     function getCollateralDepositedAmountOfUser(address user, address token)
         external
         view
@@ -409,11 +409,39 @@ contract DHCEngine is ReentrancyGuard {
         return s_collateralDeposited[user][token];
     }
 
+    function getTokenPriceFeedAddress(address token) public view returns (address) {
+        return s_priceFeeds[token];
+    }
+
     function getCollateralTokens() public view returns (address[] memory) {
         return s_collateralTokens;
     }
 
+    function getUserMintedTokens(address user) external view returns (uint256) {
+        return s_DHCMinted[user];
+    }
+
+    function getLiquidationTreshold() external pure returns (uint256) {
+        return LIQUIDATION_THRESHOLD;
+    }
+
+    function getLiquidationBonus() external pure returns (uint256) {
+        return LIQUIDATION_BONUS;
+    }
+
     function getMinHealthFactor() external pure returns (uint256) {
         return MIN_HEALTH_FACTOR;
+    }
+
+    function getPrecision() external pure returns (uint256) {
+        return PRECISION;
+    }
+
+    function getAdditionalFeedPrecision() external pure returns (uint256) {
+        return ADDITIONAL_FEED_PRECISION;
+    }
+
+    function getFeedPrecision() external pure returns (uint256) {
+        return FEED_PRECISION;
     }
 }

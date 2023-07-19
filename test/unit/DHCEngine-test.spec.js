@@ -282,6 +282,8 @@ const { developmentChains, networkConfig } = require('../../helper-hardhat-confi
 
           const expectedBalance = amountDhcToMint;
           const actualBalance = await DHC.balanceOf(deployer.address);
+          const userMintedBalance = await DHCEngine.getUserMintedTokens(deployer.address);
+          assert.equal(userMintedBalance.toString(), expectedBalance.toString());
           assert.equal(actualBalance.toString(), expectedBalance.toString());
         });
 
@@ -656,8 +658,102 @@ const { developmentChains, networkConfig } = require('../../helper-hardhat-confi
         });
       });
 
-      // TODO Liquidation tests
-      // TODO Add mocks for Transfer Failed cases (transferFrom and transfer)
-      // TODO Add mocks for failed mint cases
-      // ? Reentrancy guard tests
+      describe('Liquidation Tests', () => {
+        it('Should revert error if debt amount is 0', async () => {
+          const collateralToken = weth.address;
+          const userAddressLiquidation = deployer.address;
+          const debtToCover = 0;
+
+          await expect(
+            DHCEngine.liquidate(collateralToken, userAddressLiquidation, debtToCover)
+          ).to.be.revertedWithCustomError(DHCEngine, 'DHCEngine__NeedsMoreThanZero');
+        });
+
+        it('Should revert error if user health factor is OK', async () => {
+          await weth.mint(deployer.address, AMOUNT_TO_MINT);
+          await weth.approve(DHCEngine.address, AMOUNT_TO_MINT);
+
+          const tokenCollateralAddress = weth.address;
+          const collateralValue = ethers.utils.parseEther('2'); // $4000
+          const amountDhcToMint = ethers.utils.parseEther('900');
+
+          await DHCEngine.depostitCollateralandMintDHC(
+            tokenCollateralAddress,
+            collateralValue,
+            amountDhcToMint
+          );
+          const userAddressLiquidation = deployer.address;
+          const debtToCover = ethers.utils.parseEther('20');
+
+          await expect(
+            DHCEngine.connect(user1).liquidate(
+              tokenCollateralAddress,
+              userAddressLiquidation,
+              debtToCover
+            )
+          ).to.be.revertedWithCustomError(DHCEngine, 'DHCEngine__HealthFactorisOK');
+        });
+
+        it('Should revert error if msg.sender trying to liquidate himself', async () => {
+          await weth.mint(deployer.address, AMOUNT_TO_MINT);
+          await weth.approve(DHCEngine.address, AMOUNT_TO_MINT);
+
+          const tokenCollateralAddress = weth.address;
+          const collateralValue = ethers.utils.parseEther('2'); // $4000
+          const amountDhcToMint = ethers.utils.parseEther('900');
+
+          await DHCEngine.depostitCollateralandMintDHC(
+            tokenCollateralAddress,
+            collateralValue,
+            amountDhcToMint
+          );
+          const userAddressLiquidation = deployer.address;
+          const debtToCover = ethers.utils.parseEther('20');
+
+          await expect(
+            DHCEngine.liquidate(tokenCollateralAddress, userAddressLiquidation, debtToCover)
+          ).to.be.revertedWithCustomError(DHCEngine, 'DHCEngine__CannotLiquidateYourself');
+        });
+
+        // ! 0.05 = $100
+        // ! 0.05 = $100
+      });
+
+      describe('Statements checking tests', () => {
+        it('Should check correct liquidation treshold value', async () => {
+          const liquidationTreshold = await DHCEngine.getLiquidationTreshold();
+          const expectedLiquidatioTreshold = '50';
+          assert.equal(liquidationTreshold.toString(), expectedLiquidatioTreshold);
+        });
+        it('Should check correct liquidation bonus', async () => {
+          const liquidatioBonus = await DHCEngine.getLiquidationBonus();
+          const expectedLiquidatioBonus = '10';
+          assert.equal(liquidatioBonus.toString(), expectedLiquidatioBonus);
+        });
+        it('Should check correct minimum health factor', async () => {
+          const expectedMinHealthFactor = ethers.utils.parseEther('1');
+          const minHealthFactor = await DHCEngine.getMinHealthFactor();
+          assert.equal(minHealthFactor.toString(), expectedMinHealthFactor.toString());
+        });
+        it('Should check correct precision value', async () => {
+          const expectedPrecision = ethers.utils.parseEther('1');
+          const precision = await DHCEngine.getPrecision();
+          assert.equal(precision.toString(), expectedPrecision.toString());
+        });
+        it('Should check correct additional feed precision value', async () => {
+          const expectedAdditionalFeedPrecision = '10000000000';
+          const additionalFeedPrecision = await DHCEngine.getAdditionalFeedPrecision();
+          assert.equal(additionalFeedPrecision.toString(), expectedAdditionalFeedPrecision);
+        });
+        it('Should check correct feed precision value', async () => {
+          const expectedFeedPrecision = '100000000';
+          const feedPrecision = await DHCEngine.getFeedPrecision();
+          assert.equal(feedPrecision.toString(), expectedFeedPrecision);
+        });
+        it('Should get correct feed address', async () => {
+          const expectedFeedAddress = ethUsdPriceFeed.address;
+          const feedAddress = await DHCEngine.getTokenPriceFeedAddress(weth.address);
+          assert.equal(feedAddress, expectedFeedAddress);
+        });
+      });
     });
