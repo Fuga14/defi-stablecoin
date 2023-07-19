@@ -230,7 +230,39 @@ const { developmentChains, networkConfig } = require('../../helper-hardhat-confi
             .withArgs(expectedHealthFactor);
         });
 
-        it('Should revert on mint fail', async () => {});
+        it('Should revert on mint fail', async () => {
+          const mockFailedMintFactory = await ethers.getContractFactory('MockFailedMint');
+          const mockFailedMint = await mockFailedMintFactory.deploy();
+          await mockFailedMint.deployed();
+
+          const dhcEngineFactory = await ethers.getContractFactory('DHCEngine');
+          const dhcEngine = await dhcEngineFactory.deploy(
+            [weth.address],
+            [ethUsdPriceFeed.address],
+            mockFailedMint.address
+          );
+          await dhcEngine.deployed();
+
+          await weth.mint(deployer.address, AMOUNT_TO_MINT);
+          await weth.approve(dhcEngine.address, AMOUNT_TO_MINT);
+
+          await mockFailedMint.transferOwnership(dhcEngine.address);
+
+          const tokenCollaterAddress = weth.address;
+          const collateralValue = ethers.utils.parseEther('1');
+
+          const depositTx = await dhcEngine.depositCollateral(
+            tokenCollaterAddress,
+            collateralValue
+          );
+          await depositTx.wait();
+
+          const amountDhcToMint = ethers.utils.parseEther('100');
+          await expect(dhcEngine.mintDhc(amountDhcToMint)).to.be.revertedWithCustomError(
+            dhcEngine,
+            'DHCEngine__MintFailed'
+          );
+        });
       });
 
       describe('Deposit Collateral and mint DHC', () => {
