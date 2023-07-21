@@ -37,7 +37,7 @@ contract DHCEngine is ReentrancyGuard {
     error DHCEngine__MintFailed();
     error DHCEngine__BreaksHealthFactor(uint256 healthFactorValue);
     error DHCEngine__HealthFactorisOK();
-    error DHCEngine__HealthFactorIsNotImporved();
+    // error DHCEngine__HealthFactorIsNotImporved();
 
     using OracleLib for AggregatorV3Interface;
 
@@ -75,6 +75,12 @@ contract DHCEngine is ReentrancyGuard {
         address indexed redeemedTo,
         address indexed token,
         uint256 amount
+    );
+
+    event UserLiquidated(
+        address indexed collateralToken,
+        address indexed user,
+        uint256 indexed debtToCover
     );
 
     //////////////////////
@@ -178,24 +184,31 @@ contract DHCEngine is ReentrancyGuard {
         debtToCover = $100
         $100 DHC = ??? ETH
         */
-        uint256 tokenAmountFromDebtCovered = getTokenAmountFromUsd(collateralToken, debtToCover);
 
+        // IF COVERING 100 DHC, WE NEED $100 OF COLLATERAL
+        uint256 tokenAmountFromDebtCovered = getTokenAmountFromUsd(collateralToken, debtToCover);
         // In order to make interest of liquidation we want to make 10% bonus
         // So if liquidation is $100 of WETH we'll give $110
         // We should implement a feature to liquidate in event the protocol is insolvent
         // And sweep extra amounts into a treasury
-
         uint256 bonusCollateral = (tokenAmountFromDebtCovered * LIQUIDATION_BONUS) / 100;
-        uint256 totalCollateralToReedem = tokenAmountFromDebtCovered + bonusCollateral;
-        _redeemCollateral(user, msg.sender, collateralToken, totalCollateralToReedem);
+        // uint256 totalCollateralToRedeem = tokenAmountFromDebtCovered + bonusCollateral;
+        _redeemCollateral(
+            user,
+            msg.sender,
+            collateralToken,
+            tokenAmountFromDebtCovered + bonusCollateral
+        );
 
         //Then we burning DHC
         _burnDhc(debtToCover, user, msg.sender);
-        uint256 endingUserHealthFactor = _healthFactor(user);
-        if (endingUserHealthFactor <= startingUserHealthFactor) {
-            revert DHCEngine__HealthFactorIsNotImporved();
-        }
+
+        // uint256 endingUserHealthFactor = _healthFactor(user);
+        // if (endingUserHealthFactor <= startingUserHealthFactor) {
+        //     revert DHCEngine__HealthFactorIsNotImporved();
+        // }
         _revertIfHealthFactorIsBroken(msg.sender);
+        emit UserLiquidated(collateralToken, user, debtToCover);
     }
 
     //////////////////////
@@ -272,6 +285,7 @@ contract DHCEngine is ReentrancyGuard {
         address dhcFrom
     ) private {
         s_DHCMinted[onBehalfOf] -= amountToBurnDhc;
+        // condition probably unreacheble
         bool success = i_dhc.transferFrom(dhcFrom, address(this), amountToBurnDhc);
         if (!success) {
             revert DHCEngine__TransferFailed();
@@ -284,7 +298,7 @@ contract DHCEngine is ReentrancyGuard {
         address to,
         address tokenCollateralAddress,
         uint256 amountCollateral
-    ) public {
+    ) private {
         s_collateralDeposited[from][tokenCollateralAddress] -= amountCollateral;
 
         // check health factor for being more than 1

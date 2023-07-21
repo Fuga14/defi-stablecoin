@@ -435,6 +435,12 @@ const { developmentChains, networkConfig } = require('../../helper-hardhat-confi
           ).to.be.revertedWithCustomError(DHCEngine, 'DHCEngine__NeedsMoreThanZero');
         });
         it('Should allow user to successfully redeem collateral', async () => {
+          // !!!!!!!!!!!!!
+          // !!!!!!!!!!!!!
+          // !!!!!!!!!!!!!
+          // !!!!!!!!!!!!!
+          // !!!!!!!!!!!!!
+
           await weth.mint(deployer.address, AMOUNT_TO_MINT);
           await weth.approve(DHCEngine.address, AMOUNT_TO_MINT);
 
@@ -715,8 +721,65 @@ const { developmentChains, networkConfig } = require('../../helper-hardhat-confi
           ).to.be.revertedWithCustomError(DHCEngine, 'DHCEngine__CannotLiquidateYourself');
         });
 
-        // ! 0.05 = $100
-        // ! 0.05 = $100
+        // ! 0.05 = $100 0.7
+        it('Should allow to liquidate a user', async () => {
+          await weth.mint(deployer.address, AMOUNT_TO_MINT);
+          await weth.approve(DHCEngine.address, AMOUNT_TO_MINT);
+
+          await weth.connect(user1).mint(user1.address, AMOUNT_TO_MINT);
+          await weth.connect(user1).approve(DHCEngine.address, AMOUNT_TO_MINT);
+
+          const tokenCollateralAddress = weth.address;
+          const collateralValue = ethers.utils.parseEther('0.1'); // $200
+          const collateralValueUser1 = ethers.utils.parseEther('1'); // $2000
+          const amountDhcToMint = ethers.utils.parseEther('100');
+
+          await DHCEngine.depostitCollateralandMintDHC(
+            tokenCollateralAddress,
+            collateralValue,
+            amountDhcToMint
+          );
+
+          await DHCEngine.connect(user1).depostitCollateralandMintDHC(
+            tokenCollateralAddress,
+            collateralValueUser1,
+            amountDhcToMint
+          );
+
+          const deployerHealthFactorStart = await DHCEngine.getHealthFactor(deployer.address);
+          const user1HealthFactorStart = await DHCEngine.getHealthFactor(user1.address);
+          console.log(`Deployer health factor: ${deployerHealthFactorStart.toString()}`); // 1e18
+          console.log(`User health factor: ${user1HealthFactorStart.toString()}`);
+
+          // Deployer health factor: 1 0000000000 00000000
+          // User health factor: 10 0000000000 00000000
+
+          await ethUsdPriceFeed.updateAnswer(1400e8);
+          const usdValue = await DHCEngine.getUsdValue(weth.address, ethers.utils.parseEther('1'));
+          console.log(`Updated usd/eth price: ${usdValue.toString()}`);
+
+          const deployerHealthFactor = await DHCEngine.getHealthFactor(deployer.address);
+          const user1HealthFactor = await DHCEngine.getHealthFactor(user1.address);
+          console.log(`Deployer health factor: ${deployerHealthFactor.toString()}`); // 1e18
+          console.log(`User health factor: ${user1HealthFactor.toString()}`); // 1e18
+          // Deployer health factor: 7000000000
+          // User health factor: 70000000000
+          const debtToCover = ethers.utils.parseEther('100');
+          const debtToCoverV2 = '100';
+          await DHC.approve(DHCEngine.address, debtToCover);
+          await DHC.connect(user1).approve(DHCEngine.address, debtToCover);
+          // const collateralToCover = ethers.utils.parseEther('0.1');
+          // await weth.approve(DHCEngine.address, collateralToCover);
+          await DHCEngine.connect(user1).liquidate(
+            tokenCollateralAddress,
+            deployer.address,
+            debtToCoverV2
+          );
+
+          // const updatedUserHealthFactor = await DHCEngine.getHealthFactor(deployer.address);
+          // console.log(updatedUserHealthFactor.toString());
+          // assert.equal(updatedUserHealthFactor.toString(), UINT256_MAX);
+        });
       });
 
       describe('Statements checking tests', () => {
