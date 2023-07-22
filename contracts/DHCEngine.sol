@@ -199,9 +199,8 @@ contract DHCEngine is ReentrancyGuard {
             collateralToken,
             tokenAmountFromDebtCovered + bonusCollateral
         );
-
         //Then we burning DHC
-        _burnDhc(debtToCover, user, msg.sender);
+        _burnDhc(debtToCover * PRECISION, user, user);
 
         // uint256 endingUserHealthFactor = _healthFactor(user);
         // if (endingUserHealthFactor <= startingUserHealthFactor) {
@@ -301,7 +300,6 @@ contract DHCEngine is ReentrancyGuard {
     ) private {
         s_collateralDeposited[from][tokenCollateralAddress] -= amountCollateral;
 
-        // check health factor for being more than 1
         bool success = IERC20(tokenCollateralAddress).transfer(to, amountCollateral);
         if (!success) {
             revert DHCEngine__TransferFailed();
