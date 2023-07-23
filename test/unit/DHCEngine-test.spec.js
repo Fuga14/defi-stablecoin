@@ -724,7 +724,6 @@ const { developmentChains, networkConfig } = require('../../helper-hardhat-confi
         it('Should allow to liquidate a user all his mint coins', async () => {
           await weth.mint(deployer.address, AMOUNT_TO_MINT);
           await weth.approve(DHCEngine.address, AMOUNT_TO_MINT);
-
           await weth.connect(user1).mint(user1.address, AMOUNT_TO_MINT);
           await weth.connect(user1).approve(DHCEngine.address, AMOUNT_TO_MINT);
 
@@ -749,38 +748,17 @@ const { developmentChains, networkConfig } = require('../../helper-hardhat-confi
 
           await deposit2Tx.wait();
 
-          const userBalanceStart = await DHC.balanceOf(deployer.address);
-          console.log(`User balance at start: ${userBalanceStart.toString()}`);
-
-          const deployerHealthFactorStart = await DHCEngine.getHealthFactor(deployer.address);
-          const user1HealthFactorStart = await DHCEngine.getHealthFactor(user1.address);
-          console.log(`Deployer health factor: ${deployerHealthFactorStart.toString()}`); // 1e18
-          console.log(`User health factor: ${user1HealthFactorStart.toString()}`);
-
-          // Deployer health factor: 1 0000000000 00000000
-          // User health factor: 10 0000000000 00000000
-
           const updatePriceTx = await ethUsdPriceFeed.updateAnswer(1400e8);
           await updatePriceTx.wait();
 
-          const usdValue = await DHCEngine.getUsdValue(weth.address, ethers.utils.parseEther('1'));
-          console.log(`Updated usd/eth price: ${usdValue.toString()}`);
-
           const deployerHealthFactor = await DHCEngine.getHealthFactor(deployer.address);
           const user1HealthFactor = await DHCEngine.getHealthFactor(user1.address);
-          console.log(`Deployer health factor: ${deployerHealthFactor.toString()}`); // 1e18
-          console.log(`User health factor: ${user1HealthFactor.toString()}`); // 1e18
-          // Deployer health factor: 7000000000
-          // User health factor: 70000000000
+
           const debtToCover = ethers.utils.parseEther('100');
           const debtToCoverInUSD = '100';
           await DHC.approve(DHCEngine.address, debtToCover);
           await weth.approve(DHCEngine.address, debtToCover);
-          // await weth.connect(user1).approve(DHCEngine.address, debtToCover);
-          // await DHC.connect(user1).approve(DHCEngine.address, debtToCover);
 
-          // const collateralToCover = ethers.utils.parseEther('0.1');
-          // await weth.approve(DHCEngine.address, collateralToCover);
           const liquidateTx = await DHCEngine.connect(user1).liquidate(
             tokenCollateralAddress,
             deployer.address,
@@ -788,18 +766,13 @@ const { developmentChains, networkConfig } = require('../../helper-hardhat-confi
           );
           await liquidateTx.wait();
 
-          const userBalance = await DHC.balanceOf(deployer.address);
-          console.log(userBalance.toString());
-
           const updatedUserHealthFactor = await DHCEngine.getHealthFactor(deployer.address);
-          console.log(updatedUserHealthFactor.toString());
           assert.equal(updatedUserHealthFactor.toString(), UINT256_MAX);
         });
 
         it('Should recover user health factor', async () => {
           await weth.mint(deployer.address, AMOUNT_TO_MINT);
           await weth.approve(DHCEngine.address, AMOUNT_TO_MINT);
-
           await weth.connect(user1).mint(user1.address, AMOUNT_TO_MINT);
           await weth.connect(user1).approve(DHCEngine.address, AMOUNT_TO_MINT);
 
@@ -824,38 +797,14 @@ const { developmentChains, networkConfig } = require('../../helper-hardhat-confi
 
           await deposit2Tx.wait();
 
-          const userBalanceStart = await DHC.balanceOf(deployer.address);
-          console.log(`User balance at start: ${userBalanceStart.toString()}`);
-
-          const deployerHealthFactorStart = await DHCEngine.getHealthFactor(deployer.address);
-          const user1HealthFactorStart = await DHCEngine.getHealthFactor(user1.address);
-          console.log(`Deployer health factor: ${deployerHealthFactorStart.toString()}`); // 1e18
-          console.log(`User health factor: ${user1HealthFactorStart.toString()}`);
-
-          // Deployer health factor: 1 0000000000 00000000
-          // User health factor: 10 0000000000 00000000
-
           const updatePriceTx = await ethUsdPriceFeed.updateAnswer(1400e8);
           await updatePriceTx.wait();
 
-          const usdValue = await DHCEngine.getUsdValue(weth.address, ethers.utils.parseEther('1'));
-          console.log(`Updated usd/eth price: ${usdValue.toString()}`);
-
-          const deployerHealthFactor = await DHCEngine.getHealthFactor(deployer.address);
-          const user1HealthFactor = await DHCEngine.getHealthFactor(user1.address);
-          console.log(`Deployer health factor: ${deployerHealthFactor.toString()}`); // 1e18
-          console.log(`User health factor: ${user1HealthFactor.toString()}`); // 1e18
-          // Deployer health factor: 7000000000
-          // User health factor: 70000000000
           const debtToCover = ethers.utils.parseEther('60');
           const debtToCoverInUSD = '60';
           await DHC.approve(DHCEngine.address, debtToCover);
           await weth.approve(DHCEngine.address, debtToCover);
-          // await weth.connect(user1).approve(DHCEngine.address, debtToCover);
-          // await DHC.connect(user1).approve(DHCEngine.address, debtToCover);
 
-          // const collateralToCover = ethers.utils.parseEther('0.1');
-          // await weth.approve(DHCEngine.address, collateralToCover);
           const liquidateTx = await DHCEngine.connect(user1).liquidate(
             tokenCollateralAddress,
             deployer.address,
@@ -863,18 +812,13 @@ const { developmentChains, networkConfig } = require('../../helper-hardhat-confi
           );
           await liquidateTx.wait();
 
-          const userBalance = await DHC.balanceOf(deployer.address);
-          console.log(userBalance.toString());
-
           const updatedUserHealthFactor = await DHCEngine.getHealthFactor(deployer.address);
-          // assert.equal(updatedUserHealthFactor.toString(), MIN_HEALTH_FACTOR.toString());
           expect(updatedUserHealthFactor).to.be.greaterThan(MIN_HEALTH_FACTOR);
         });
 
         it('Should emit event when liquidation is successful', async () => {
           await weth.mint(deployer.address, AMOUNT_TO_MINT);
           await weth.approve(DHCEngine.address, AMOUNT_TO_MINT);
-
           await weth.connect(user1).mint(user1.address, AMOUNT_TO_MINT);
           await weth.connect(user1).approve(DHCEngine.address, AMOUNT_TO_MINT);
 
@@ -899,38 +843,14 @@ const { developmentChains, networkConfig } = require('../../helper-hardhat-confi
 
           await deposit2Tx.wait();
 
-          const userBalanceStart = await DHC.balanceOf(deployer.address);
-          console.log(`User balance at start: ${userBalanceStart.toString()}`);
-
-          const deployerHealthFactorStart = await DHCEngine.getHealthFactor(deployer.address);
-          const user1HealthFactorStart = await DHCEngine.getHealthFactor(user1.address);
-          console.log(`Deployer health factor: ${deployerHealthFactorStart.toString()}`); // 1e18
-          console.log(`User health factor: ${user1HealthFactorStart.toString()}`);
-
-          // Deployer health factor: 1 0000000000 00000000
-          // User health factor: 10 0000000000 00000000
-
           const updatePriceTx = await ethUsdPriceFeed.updateAnswer(1400e8);
           await updatePriceTx.wait();
 
-          const usdValue = await DHCEngine.getUsdValue(weth.address, ethers.utils.parseEther('1'));
-          console.log(`Updated usd/eth price: ${usdValue.toString()}`);
-
-          const deployerHealthFactor = await DHCEngine.getHealthFactor(deployer.address);
-          const user1HealthFactor = await DHCEngine.getHealthFactor(user1.address);
-          console.log(`Deployer health factor: ${deployerHealthFactor.toString()}`); // 1e18
-          console.log(`User health factor: ${user1HealthFactor.toString()}`); // 1e18
-          // Deployer health factor: 7000000000
-          // User health factor: 70000000000
           const debtToCover = ethers.utils.parseEther('60');
           const debtToCoverInUSD = '60';
           await DHC.approve(DHCEngine.address, debtToCover);
           await weth.approve(DHCEngine.address, debtToCover);
-          // await weth.connect(user1).approve(DHCEngine.address, debtToCover);
-          // await DHC.connect(user1).approve(DHCEngine.address, debtToCover);
 
-          // const collateralToCover = ethers.utils.parseEther('0.1');
-          // await weth.approve(DHCEngine.address, collateralToCover);
           await expect(
             DHCEngine.connect(user1).liquidate(
               tokenCollateralAddress,
@@ -978,6 +898,79 @@ const { developmentChains, networkConfig } = require('../../helper-hardhat-confi
           const expectedFeedAddress = ethUsdPriceFeed.address;
           const feedAddress = await DHCEngine.getTokenPriceFeedAddress(weth.address);
           assert.equal(feedAddress, expectedFeedAddress);
+        });
+      });
+
+      describe('Decentralized Hryvna Coin Unit Tests', () => {
+        const deployDHC = async () => {
+          const DHCFactory = await ethers.getContractFactory('DecentralizedHryvnaCoin');
+          const dhc = await DHCFactory.deploy();
+          await dhc.deployed();
+          return dhc;
+        };
+
+        describe('Burn function TESTS', () => {
+          it('Should revert if caller is not the owner', async () => {
+            const dhc = await deployDHC();
+            const amount = '100';
+            await expect(dhc.connect(user1).burn(amount)).to.be.revertedWith(
+              'Ownable: caller is not the owner'
+            );
+          });
+
+          it('Should revert error if amount is 0', async () => {
+            const dhc = await deployDHC();
+            const amount = 0;
+            await expect(dhc.burn(amount)).to.be.revertedWithCustomError(
+              dhc,
+              'DecentralizedHryvnaCoin__MustBeMoreThanZero'
+            );
+          });
+
+          it('Should revert if balance is less than amount to burn', async () => {
+            const dhc = await deployDHC();
+            await dhc.mint(deployer.address, ethers.utils.parseEther('1'));
+
+            const amount = ethers.utils.parseEther('10');
+
+            await expect(dhc.burn(amount)).to.be.revertedWithCustomError(
+              dhc,
+              'DecentralizedHryvnaCoin__BurnAmountExceedsBalance'
+            );
+          });
+        });
+
+        describe('Mint function TESTS', () => {
+          it('Should revert if caller is not the owner', async () => {
+            const dhc = await deployDHC();
+            const to = user1.address;
+            const amount = ethers.utils.parseEther('1');
+
+            await expect(dhc.connect(user1).mint(to, amount)).to.be.revertedWith(
+              'Ownable: caller is not the owner'
+            );
+          });
+
+          it('Should revert if mint address is address(0)', async () => {
+            const dhc = await deployDHC();
+            const to = ethers.constants.AddressZero;
+            const amount = '1';
+            await expect(dhc.mint(to, amount)).to.be.revertedWithCustomError(
+              dhc,
+              'DecentralizedHryvnaCoin__NotZeroAddress'
+            );
+          });
+
+          it('Should revert if mint amount is 0', async () => {
+            const dhc = await deployDHC();
+            const to = await deployer.address;
+            const amount = 0;
+
+            await expect(dhc.mint(to, amount)).to.be.revertedWithCustomError(
+              dhc,
+              'DecentralizedHryvnaCoin__MustBeMoreThanZero'
+            );
+          });
         });
       });
     });

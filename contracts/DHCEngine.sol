@@ -120,10 +120,6 @@ contract DHCEngine is ReentrancyGuard {
         i_dhc = DecentralizedHryvnaCoin(dhcAddress);
     }
 
-    //////////////////////
-    // External functions
-    //////////////////////
-
     /**
      * @param tokenCollateralAddress The address of the token to deposit as collateral
      * @param amountCollateral The amount of collateral to deposit
@@ -184,15 +180,11 @@ contract DHCEngine is ReentrancyGuard {
         debtToCover = $100
         $100 DHC = ??? ETH
         */
-
         // IF COVERING 100 DHC, WE NEED $100 OF COLLATERAL
         uint256 tokenAmountFromDebtCovered = getTokenAmountFromUsd(collateralToken, debtToCover);
         // In order to make interest of liquidation we want to make 10% bonus
         // So if liquidation is $100 of WETH we'll give $110
-        // We should implement a feature to liquidate in event the protocol is insolvent
-        // And sweep extra amounts into a treasury
         uint256 bonusCollateral = (tokenAmountFromDebtCovered * LIQUIDATION_BONUS) / 100;
-        // uint256 totalCollateralToRedeem = tokenAmountFromDebtCovered + bonusCollateral;
         _redeemCollateral(
             user,
             msg.sender,
@@ -201,11 +193,6 @@ contract DHCEngine is ReentrancyGuard {
         );
         //Then we burning DHC
         _burnDhc(debtToCover * PRECISION, user, user);
-
-        // uint256 endingUserHealthFactor = _healthFactor(user);
-        // if (endingUserHealthFactor <= startingUserHealthFactor) {
-        //     revert DHCEngine__HealthFactorIsNotImporved();
-        // }
         _revertIfHealthFactorIsBroken(msg.sender);
         emit UserLiquidated(collateralToken, user, debtToCover);
     }
@@ -365,7 +352,7 @@ contract DHCEngine is ReentrancyGuard {
         view
         returns (uint256)
     {
-        // usdAmountInWei / priceOfToken
+        // usdAmountInETH / priceOfToken
         AggregatorV3Interface priceFeed = AggregatorV3Interface(s_priceFeeds[token]);
         (, int256 price, , , ) = priceFeed.latestRoundData();
         return (usdAmountInWei * PRECISION) / (uint256(price) * ADDITIONAL_FEED_PRECISION);
