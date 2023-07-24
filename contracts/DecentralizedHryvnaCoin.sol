@@ -10,7 +10,7 @@ contract DecentralizedHryvnaCoin is ERC20Burnable, Ownable {
     error DecentralizedHryvnaCoin__BurnAmountExceedsBalance();
     error DecentralizedHryvnaCoin__NotZeroAddress();
 
-    constructor() ERC20("Decentralized Hryvna Coin", "DHC") {}
+    constructor() ERC20("Ukrainian Hryvnia Coin", "UHC") {}
 
     function burn(uint256 _amount) public override onlyOwner {
         uint256 balance = balanceOf(msg.sender);

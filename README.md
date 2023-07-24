@@ -1,4 +1,4 @@
-# Decentralized Hryvna Coin ₴ 
+# Ukrainian Hryvnia Coin ₴ 
 
 Welcome to the exciting world of an innovative financial protocol - a decentralized version of Ukraine's national currency. This protocol turns the idea of traditional money upside down, providing unique opportunities and attractive prospects for its users.
 
