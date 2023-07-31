@@ -35,7 +35,7 @@ const networkConfig = {
         ethUsdPriceFeed: '0x694AA1769357215DE4FAC081bf1f309aDC325306',
         btcUsdPriceFeed: '0x5fb1616F78dA7aFC9FF79e0371741a747D2a7F22',
         wethAddress: '0xdd13E55209Fd76AfE204dBda4007C227904f0a81',
-        wbtcAddress: '0x8f3Cf7ad23Cd3CaDbD9735AFf958023239c6A063',
+        wbtcAddress: '0xAe7C08f2FC56719b8F403C29F02E99CF809F8e34',
         /////
         linkToken: '0x779877A7B0D9E8603169DdbD7836e478b4624789',
         keyHash: '0x474e34a077df58807dbe9c96d3c009b23b3c6d0cce433e59bbf5b34f823bc56c',
